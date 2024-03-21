@@ -1,0 +1,16 @@
+/* HomePage.module.css */
+.tableCell {
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid rgba(0, 0, 0, 0.1); /* Bordo leggero */
+  }
+  
+  .tableHeader {
+    text-align: center;
+    vertical-align: middle;
+    background-color: rgba(0, 0, 0, 0.05); /* Sfondo leggermente più scuro per l'header */
+  }
+  .icon-size {
+    width: 16px;
+    height: 16px;
+  }
