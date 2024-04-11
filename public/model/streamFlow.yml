@@ -1,0 +1,22 @@
+#!/usr/bin/env streamflow
+version: v1.0
+workflows:
+  workflow:
+    type: cwl
+    config:
+      file: workflow.cwl
+      settings: config.yml
+    bindings:
+      - step: / 
+        target:
+          deployment: slurm-model
+          workdir: /beegfs/home/scontald/sf_tmp
+
+deployments:
+  slurm-model:
+    type: slurm
+    config:
+      hostname: c3sfr1.di.unito.it
+      username: scontald
+      sshKey: /home/scontaldo/.ssh/id_rsa  
+      file: ./test.sh

@@ -9,6 +9,21 @@ import Footer from '@/components/footer/Footer';
 
 export default function HomePage() {
   const [testError, setTestError] = useState(false);
+
+  // Funzione per chiamare l'API di inserimento
+const handleInsert = async () => {
+  const response = await fetch('/api/insert', { method: 'POST' });
+  const data = await response.json();
+  console.log(data);
+};
+
+// Funzione per chiamare l'API di selezione
+const handleSelect = async () => {
+  const response = await fetch('/api/select', { method: 'GET' });
+  const data = await response.json();
+  console.log(data);
+};
+
   if (testError) throw new Error('test error.tsx');
   return (
     <>
@@ -21,6 +36,8 @@ export default function HomePage() {
             >
                 Error
             </button>
+      <button onClick={handleInsert}>Test Insert</button>
+      <button onClick={handleSelect}>Test Select</button>
       <Footer/>
     </>
   );
