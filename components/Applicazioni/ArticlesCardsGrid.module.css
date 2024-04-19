@@ -13,3 +13,31 @@
     font-family: 'Greycliff CF', var(--mantine-font-family);
     font-weight: bold;
   }
+
+  .segmentWrapper {
+    display: flex;
+    align-items: center; /* Centra verticalmente l'icona con la card */
+    justify-content: center; /* Centra orizzontalmente gli elementi nel wrapper */
+  }
+  
+  .card {
+    margin-right: 10px; /* Spazio tra la card e l'icona */
+  }
+  
+  .iconArrow {
+    display: flex; /* Garantisce che l'icona sia allineata correttamente */
+    align-items: center; /* Centra l'icona verticalmente */
+  }
+
+  .vertical-arrow {
+    display: none; /* Nascondi per default le frecce verticali */
+  }
+  
+  @media (max-width: 768px) {
+    .horizontal-arrow {
+      display: none; /* Nascondi le frecce orizzontali su dispositivi mobili */
+    }
+    .vertical-arrow {
+      display: block; /* Mostra le frecce verticali su dispositivi mobili */
+    }
+  }

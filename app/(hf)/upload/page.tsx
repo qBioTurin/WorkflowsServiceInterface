@@ -7,6 +7,8 @@ import { useState } from 'react';
 
 import { v4 as uuidv4 } from 'uuid'; // Importa uuid per generare un ID univoco
 
+
+
 export default function NewAnalysisPage() {
   const [file1, setFile1] = useState<File | null>(null);
   const [file2, setFile2] = useState<File | null>(null);
