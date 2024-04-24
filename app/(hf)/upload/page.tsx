@@ -57,35 +57,35 @@ export default function NewAnalysisPage() {
 
   const fileInput = (file: File | null, setFile: React.Dispatch<React.SetStateAction<File | null>>, label: string) => (
     <Box>
-    {file ? (
-      <Group ml="md">
-        <Text>{file.name}</Text>
-        <IconX size={16} stroke={1.5} style={{ cursor: 'pointer' }} onClick={() => setFile(null)} />
-      </Group>
-    ) : (
-      <>
-        <input
-          type="file"
-          id={`file-upload-${label}`}
-          style={{ display: 'none' }}
-          onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-          accept=".pdf, .csv"
-        />
-        <label htmlFor={`file-upload-${label}`}>
-          <Button component="span" leftSection={<IconUpload size={16} />}>
-            Browse
-          </Button>
-          {label}
-        </label>
-        <Tooltip
-          label="Supports .pdf and .csv files up to 5MB."
-          position="right"
-        >
-          <IconInfoCircle size={16} style={{ cursor: 'help', marginLeft: 10 }} />
-        </Tooltip>
-      </>
-    )}
-  </Box>
+      {file ? (
+        <Group ml="md">
+          <Text>{file.name}</Text>
+          <IconX size={16} stroke={1.5} style={{ cursor: 'pointer' }} onClick={() => setFile(null)} />
+        </Group>
+      ) : (
+        <>
+          <input
+            type="file"
+            id={`file-upload-${label}`}
+            style={{ display: 'none' }}
+            onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+            accept=".pdf, .csv"
+          />
+          <label htmlFor={`file-upload-${label}`}>
+            <Button component="span" leftSection={<IconUpload size={16} />}>
+              Browse
+            </Button>
+            {label}
+          </label>
+          <Tooltip
+            label="Supports .pdf and .csv files up to 5MB."
+            position="right"
+          >
+            <IconInfoCircle size={16} style={{ cursor: 'help', marginLeft: 10 }} />
+          </Tooltip>
+        </>
+      )}
+    </Box>
   );
 
   return (
@@ -106,7 +106,7 @@ export default function NewAnalysisPage() {
               />
               <Box my="md">{fileInput(file1, setFile1, 'Upload File 1')}</Box>
               <Box my="md">{fileInput(file2, setFile2, 'Upload File 2')}</Box>
-              <Group mt="md">
+              <Group mt="md"style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button variant="default" onClick={handleReset}>Reset</Button>
                 <Button variant="filled" onClick={handleSubmit}>Submit</Button>
               </Group>

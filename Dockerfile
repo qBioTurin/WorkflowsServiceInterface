@@ -3,8 +3,8 @@ FROM node:18.18.0-alpine AS builder
 
 WORKDIR /WorkflowsServiceInterface
 
-#aggiorna
-RUN apk update
+# Aggiorna e installa 'at'
+RUN apk update && apk add at
 
 # Copia solo i file necessari per l'installazione delle dipendenze
 COPY package*.json ./
@@ -23,12 +23,19 @@ FROM node:18.18.0-alpine AS runner
 
 WORKDIR /app
 
+# Installa 'at' e il demone 'atd'
+RUN apk update && apk add at openrc && rc-update add atd boot
+
 # Copia solo i file necessari dall'immagine di costruzione
 COPY --from=builder /WorkflowsServiceInterface/node_modules ./node_modules
 COPY --from=builder /WorkflowsServiceInterface/.next ./.next
 COPY --from=builder /WorkflowsServiceInterface/public ./public
 COPY --from=builder /WorkflowsServiceInterface/package.json ./package.json
 
+# Copia lo script di avvio
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["./start.sh"]

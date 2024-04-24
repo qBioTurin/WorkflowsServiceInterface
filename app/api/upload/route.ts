@@ -21,35 +21,23 @@ function calculateExpirationDate(currentDate: Date): string {
   return `${day}/${month}/${year}`;
 }
 
-async function scheduleFolderDeletion(folderPath: string, minutes: number) {
-  const scriptName = `deleteFolder_${new Date().getTime()}.sh`;
-  const scriptPath = `/tmp/${scriptName}`;
-  const deleteScriptContent = `#!/bin/bash\nrm -rf "${folderPath}"\n`;
-
-  await fs.writeFile(scriptPath, deleteScriptContent);
-  await fs.chmod(scriptPath, '0755');
-
-  const date = new Date();
-  date.setMinutes(date.getMinutes() + minutes);
-  const minute = date.getMinutes();
-  const hour = date.getHours();
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
-
-  const cronCommand = `${minute} ${hour} ${day} ${month} * ${scriptPath}`;
-  const cronJobCommand = `(crontab -l 2>/dev/null; echo "${cronCommand}") | crontab -`;
-
-  try {
-    const { stdout, stderr } = await execAsync(cronJobCommand);
-    if (stderr) {
-      logger.error(`Errore STDERR durante l'aggiunta del cron job: ${stderr}`, { module: 'upload' });
-      throw new Error(stderr);
+async function scheduleFolderDeletion(folderPath:string, minutes:number) {
+  exec(`echo "rm -rf ${folderPath}" | at now + ${minutes} minutes`, (error, stdout, stderr) => {
+    if (error) {
+      console.log(`Errore durante la pianificazione del comando Hello: ${error.message}`);
+      logger.error(`Errore durante la pianificazione del comando Hello: ${error.message}`);
+      return;
     }
-    logger.info(`Cron job creato con successo per eliminare la cartella '${folderPath}' in ${minutes} minuti.`, { module: 'upload' });
-  } catch (error) {
-    logger.error(`Errore durante la creazione del cron job: ${error}`, { module: 'upload' });
-  }
+    if (stderr) {
+      console.log(`Errore STDERR durante la pianificazione del comando Hello: ${stderr}`);
+      logger.error(`Errore STDERR durante la pianificazione del comando Hello: ${stderr}`);
+      return;
+    }
+    console.log("Comando Hello programmato con successo");
+    logger.info("Comando Hello programmato con successo");
+  });
 }
+
 
 function getCurrentDateFormatted(): string {
   const today = new Date();
@@ -163,7 +151,7 @@ export async function POST(req: NextRequest, res: NextResponse) {
     await sleep(10000);
     await cleanUpInputDirectory(storageDir);
 
-    scheduleFolderDeletion(reportDir, 2);
+    scheduleFolderDeletion(reportDir, 1);
     logger.info("Pulizia completata e operazione conclusa.", { module: 'upload' });
     return NextResponse.json({ success: true });
   });

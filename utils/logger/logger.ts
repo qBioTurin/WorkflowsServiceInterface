@@ -32,6 +32,14 @@ const logger = winston.createLogger({
         filterByModule('upload'),
         winston.format.json()  // Usa JSON per il formato dei log di upload
       )
+    }),
+    new winston.transports.File({
+      filename: 'logs/cleanup.log',
+      level: 'info',
+      format: winston.format.combine(
+        filterByModule('cleanup'),
+        winston.format.json()  // Usa JSON per il formato dei log di upload
+      )
     })
   ]
 });

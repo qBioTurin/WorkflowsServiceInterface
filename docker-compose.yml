@@ -1,0 +1,37 @@
+# este compose incluye la base de datos en otro docker y levanta aplicacion y DB juntos
+version: "3.1"
+
+services:
+  postgres:
+    image: postgres:15.4
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./postgresql:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - workflowsserviceinterface-network
+
+  workflowsserviceinterface-server:
+    image: workflowsserviceinterface-server
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DBHOST: postgres
+      INSTANCE_NAME: workflowsserviceinterface
+      # SCOPE: national_catalogue
+    networks:
+      - workflowsserviceinterface-network
+    ports:
+      - "127.0.0.1:3000:3000"
+
+networks:
+  workflowsserviceinterface-network:
+    driver: bridge
