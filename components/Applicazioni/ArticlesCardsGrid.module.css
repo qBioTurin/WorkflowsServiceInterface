@@ -1,43 +1,51 @@
 .card {
-    transition:
-      transform 150ms ease,
-      box-shadow 150ms ease;
-  
-    &:hover {
-      transform: scale(1.01);
-      box-shadow: var(--mantine-shadow-md);
-    }
-  }
-  
-  .title {
-    font-family: 'Greycliff CF', var(--mantine-font-family);
-    font-weight: bold;
-  }
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
 
-  .segmentWrapper {
-    display: flex;
-    align-items: center; /* Centra verticalmente l'icona con la card */
-    justify-content: center; /* Centra orizzontalmente gli elementi nel wrapper */
-  }
-  
-  .card {
-    margin-right: 10px; /* Spazio tra la card e l'icona */
-  }
-  
-  .iconArrow {
-    display: flex; /* Garantisce che l'icona sia allineata correttamente */
-    align-items: center; /* Centra l'icona verticalmente */
-  }
+.card:hover {
+  transform: scale(1.01);
+  box-shadow: var(--mantine-shadow-md);
+}
 
-  .vertical-arrow {
-    display: none; /* Nascondi per default le frecce verticali */
-  }
-  
-  @media (max-width: 768px) {
-    .horizontal-arrow {
-      display: none; /* Nascondi le frecce orizzontali su dispositivi mobili */
-    }
-    .vertical-arrow {
-      display: block; /* Mostra le frecce verticali su dispositivi mobili */
-    }
-  }
+.title {
+  font-family: 'Greycliff CF', var(--mantine-font-family);
+  font-weight: bold;
+  margin-top: 1.25rem; /* 20px if base font-size is 16px */
+  text-transform: uppercase;
+}
+
+.blurredBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  filter: blur(4px);
+  z-index: -1;
+}
+
+.viewMore {
+  filter: blur(4px);
+  transition: filter 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewMore:hover {
+  filter: blur(0);
+}
+
+/* ArticlesCardsGrid.module.css */
+.cardBlurred {
+  filter: blur(8px);
+  transition: filter 0.3s;
+}
+
+.cardHidden {
+  display: none;
+}

@@ -30,7 +30,7 @@
     "@tabler/icons": "^3.2.0",
     "@tabler/icons-react": "^2.40.0",
     "formidable": "^3.5.1",
-    "next": "14.0.1",
+    "next": "^14.2.3",
     "node-cron": "^3.0.3",
     "pg": "^8.11.5",
     "react": "18.2.0",

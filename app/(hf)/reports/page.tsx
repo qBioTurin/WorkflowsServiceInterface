@@ -1,99 +1,90 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Container, Table, Button, Group, Text ,Box,Pagination,TextInput} from '@mantine/core';
-import { IconPlus,IconSearch,IconFilter } from '@tabler/icons-react';
-import styles from './Reports.module.css'; // Importa il file CSS
+import Link from 'next/link';
+import { Container, Table, Button, Group, Text, Box, Pagination, TextInput } from '@mantine/core';
+import { IconPlus, IconSearch, IconFilter } from '@tabler/icons-react';
 import useDownloader from 'react-use-downloader';
-// Tipo di dato per rappresentare un caso
+import { getReports } from './report';
+
 interface Case {
-    id: string;
-    name: string;
-    creationDate: string;
-    status: 'Pending' | 'Completed';
-  }
-  
-  const staticCases: Case[] = [
-    { id: '1', name: '01b-Class.pdf', creationDate: '2023-01-01', status: 'Completed' },
-    { id: '2', name: 'Caso 2', creationDate: '2023-02-15', status: 'Completed' },
-    // Aggiungi altri casi qui
-    { id: '3', name: 'Caso 3', creationDate: '2023-03-10', status: 'Completed' },
-    { id: '4', name: 'Caso 4', creationDate: '2023-04-05', status: 'Pending' },
-  ];
+  id: string;
+  name: string;
+  creationDate: string;
+  status: 'Pending' | 'Completed';
+  downloadUrl: string;
+}
 
-  export default function HomePage() {
-    const { size, elapsed, percentage, download, cancel, error, isInProgress } =
-    useDownloader();
-    const router = useRouter();
-    const [cases, setCases] = useState<Case[]>([]);
+export default function HomePage() {
+  const { size, elapsed, percentage, download, cancel, error, isInProgress } = useDownloader();
+  const [cases, setCases] = useState<Case[]>([]);
 
-  
-    useEffect(() => {
-      setCases(staticCases);
-    }, []);
-  
-    const handleDetailsClick = (caseId: string) => {
-      router.push(`/case/${caseId}`);
+  useEffect(() => {
+    const fetchCases = async () => {
+      try {
+        const data = await getReports();
+        setCases(data);
+      } catch (error) {
+        console.error('Failed to fetch reports', error);
+      }
     };
-    
-    const handleAddAnalysis = () => {
-        router.push("/upload")
-      };
 
-      const handleDownload = (url: string, filename: string) => {
-        download(url, filename); // Usa la funzione di download qui
-      };
-    
+    fetchCases();
+  }, []);
 
-    
-    const icon = <IconSearch style={{ width: '16 rem', height: '16 rem' }} />;
-    return (
-      <>
-        <Container>
+  const handleDownload = (url: string, filename: string) => {
+    download(url, filename);
+  };
+
+  const icon = <IconSearch style={{ width: '16 rem', height: '16 rem' }} />;
+  return (
+    <>
+      <Container mt="50">
         <Box mb="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: '1.5rem', fontWeight: 500 }}>Your reports</Text>
           <Group>
             <TextInput leftSection={icon} placeholder="Search reports" />
-            <Button ><IconFilter size={18} />Filters</Button>
-            <Button onClick={handleAddAnalysis}> <IconPlus size={18} />Add Analysis</Button>
+            <Button><IconFilter size={18} />Filters</Button>
+            <Link href="/upload" passHref>
+              <Button ><IconPlus size={18} />Add Analysis</Button>
+            </Link>
           </Group>
         </Box>
-          <Table striped highlightOnHover>
-            <thead>
-              <tr>
-                <th className={styles.tableHeader}>Nome</th>
-                <th className={styles.tableHeader}>Data di Creazione</th>
-                <th className={styles.tableHeader}>Stato</th>
-                <th className={styles.tableHeader}>Dettagli</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cases.map((caseItem) => (
-                <tr key={caseItem.id}>
-                  <td className={styles.tableCell}>{caseItem.name}</td>
-                  <td className={styles.tableCell}>{caseItem.creationDate}</td>
-                  <td className={styles.tableCell}>
-                    <Text color={caseItem.status === 'Completed' ? 'green' : 'orange'}>
-                      {caseItem.status}
-                    </Text>
-                  </td>
-                  <td className={styles.tableCell}>
-                    {caseItem.status === 'Completed' ? (
-                      <Button onClick={() => handleDownload(`/storage/utente1/ciao/${caseItem.name}`, caseItem.name)}>
-                        Scarica resoconto
+        <Table striped highlightOnHover>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Data di Creazione</th>
+              <th>Stato</th>
+              <th>Dettagli</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cases.map((caseItem) => (
+              <tr key={caseItem.id}>
+                <td>{caseItem.name}</td>
+                <td>{caseItem.creationDate}</td>
+                <td>
+                  <Text color={caseItem.status === 'Completed' ? 'green' : 'orange'}>
+                    {caseItem.status}
+                  </Text>
+                </td>
+                <td>
+                  {caseItem.status === 'Completed' ? (
+                    <Button onClick={() => handleDownload(caseItem.downloadUrl, caseItem.name)}>
+                      Scarica resoconto
                     </Button>
-                    ) : (
-                      <Text color="gray">In attesa</Text>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-          <Box mt="md" style={{ display: 'flex', justifyContent: 'center' }}>
-          <Pagination total={10} /* Pagina corrente */ onChange={() => {}} /* Funzione da eseguire quando cambia la pagina */ />
-          </Box>
-        </Container>
-      </>
-    );
-  }
+                  ) : (
+                    <Text color="gray">In attesa</Text>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+        <Box mt="md" style={{ display: 'flex', justifyContent: 'center' }}>
+          <Pagination total={10} /* Pagina corrente */ onChange={() => {}} />
+        </Box>
+      </Container>
+    </>
+  );
+}

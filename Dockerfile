@@ -26,7 +26,9 @@ WORKDIR /app
 # Installa 'at' e il demone 'atd'
 RUN apk update && apk add at openrc && rc-update add atd boot
 
-# Copia solo i file necessari dall'immagine di costruzione
+# ho sostituito i vari copy con un install per evitare conflittualità
+#RUN npm install
+
 COPY --from=builder /WorkflowsServiceInterface/node_modules ./node_modules
 COPY --from=builder /WorkflowsServiceInterface/.next ./.next
 COPY --from=builder /WorkflowsServiceInterface/public ./public

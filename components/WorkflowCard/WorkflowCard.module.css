@@ -1,0 +1,69 @@
+.card {
+    position: relative;
+    overflow: hidden;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  
+  .card:hover {
+    transform: scale(1.01);
+    box-shadow: var(--mantine-shadow-md);
+  }
+  
+  .title {
+    font-family: 'Greycliff CF', var(--mantine-font-family);
+    font-weight: bold;
+    margin-top: 1.25rem; /* 20px if base font-size is 16px */
+    text-transform: uppercase;
+  }
+  
+  .blurredBackground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    filter: blur(4px);
+    z-index: -1;
+  }
+  
+  .viewMore {
+    filter: blur(4px);
+    transition: filter 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .viewMore:hover {
+    filter: blur(0);
+  }
+  
+  /* ArticlesCardsGrid.module.css */
+  .cardBlurred {
+    filter: blur(8px);
+    transition: filter 0.3s;
+  }
+  
+  .cardHidden {
+    display: none;
+  }
+
+/* styles.css */
+.custom-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    color: #0000FF; /* Stile link */
+    text-decoration: underline; /* Stile link */
+    font-weight: bold; /* Stile personalizzato */
+  }
+  
+  .custom-text:hover {
+    cursor: pointer;
+    color: #FF0000; /* Cambia colore al passaggio del mouse */
+  }
+  

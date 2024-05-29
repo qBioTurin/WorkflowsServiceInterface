@@ -7,16 +7,14 @@ import { MantineLogo } from '@mantinex/mantine-logo'; // Assicurati di sostituir
 import { useRouter } from 'next/navigation';
 
 export default function Registration() {
-  // Opzionalmente, potresti voler caricare dinamicamente la lista dei paesi
-  const countries = ['Country 1', 'Country 2', 'Country 3'];
+  const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('');  // Default value can be adjusted if necessary
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  const router = useRouter();
+  const countries = ['Country 1', 'Country 2', 'Country 3']; // Potentially fetched dynamically
 
   useEffect(() => {
     const header = document.getElementById('header') as HTMLElement | null;
@@ -31,66 +29,68 @@ export default function Registration() {
     router.push(path);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Previene il comportamento di default del form
   
-    // Invio dei dati alla tua API
-    const response = await fetch('/api/register', {
+
+  const handleSubmit = async (e : any) => {
+    e.preventDefault();
+    const response = await fetch('/api/databaseRegister', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ firstName, lastName, phone, country, email, password }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, lastName, phone, country, email, password })
     });
-  
+    
     if (response.ok) {
-      // Gestione della risposta di successo, ad esempio reindirizzamento alla pagina di login
-      router.push('/login');
+      const user :any = {
+        firstName,
+        lastName,
+        phone,
+        country,
+        email,
+        password // Nota: la password è inclusa qui per semplicità, ma come già discusso, è meglio non memorizzarla in produzione
+      };
+
+      alert('Registration successful');
+      
+      localStorage.setItem('user', JSON.stringify(user));
+      router.push('/'); // Redirect to home page or other as required
     } else {
-      // Gestione degli errori
-      alert('Failed to register');
+      alert('Failed to register. Please try again.');
     }
   };
 
   return (
     <Container size={420} my={40}>
       <Center mb="xl">
-        <UnstyledButton onClick={() => handleTabClick('/')} title="Home">
+        <UnstyledButton onClick={() => router.push('/')} title="Home">
           <MantineLogo size={80} />
         </UnstyledButton>
       </Center>
-  
       <Paper withBorder shadow="md" p={30} radius="md">
         <Title mb="lg">Sign Up</Title>
-  
-        {/* Aggiungi il tag form qui con l'evento onSubmit */}
         <form onSubmit={handleSubmit}>
           <TextInput
             leftSection={<IconUser />}
             label="First Name"
             placeholder="John"
             required
-            mt="md"
             value={firstName}
-            onChange={(e) => setFirstName(e.currentTarget.value)}
+            onChange={(e) => setFirstName(e.target.value)}
           />
           <TextInput
             leftSection={<IconUser />}
             label="Last Name"
             placeholder="Doe"
             required
-            mt="md"
             value={lastName}
-            onChange={(e) => setLastName(e.currentTarget.value)}
+            onChange={(e) => setLastName(e.target.value)}
           />
           <TextInput
             leftSection={<IconPhone />}
             label="Phone"
             placeholder="+123456789"
             required
-            mt="md"
             value={phone}
-            onChange={(e) => setPhone(e.currentTarget.value)}
+            onChange={(e) => setPhone(e.target.value)}
           />
           <Select
             leftSection={<IconMapPin />}
@@ -100,29 +100,31 @@ export default function Registration() {
             required
             mt="md"
             value={country}
-            onChange={(value) => setCountry(value!)}
+            onChange={(value) => {
+              if (value === null) {
+                setCountry(""); // Set to empty string or some default value if null
+              } else {
+                setCountry(value);
+              }
+            }}
           />
           <TextInput
             leftSection={<IconAt />}
             label="Email"
             placeholder="you@example.com"
             required
-            mt="md"
             value={email}
-            onChange={(e) => setEmail(e.currentTarget.value)}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <PasswordInput
             leftSection={<IconLock />}
             label="Password"
             placeholder="Your password"
             required
-            mt="md"
             value={password}
-            onChange={(e) => setPassword(e.currentTarget.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
-  
           <Group mt="md">
-            {/* Modifica il bottone per essere di tipo submit */}
             <Button type="submit" variant="filled">Register</Button>
           </Group>
         </form>
