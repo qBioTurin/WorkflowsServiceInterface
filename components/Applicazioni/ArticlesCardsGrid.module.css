@@ -9,12 +9,6 @@
   box-shadow: var(--mantine-shadow-md);
 }
 
-.title {
-  font-family: 'Greycliff CF', var(--mantine-font-family);
-  font-weight: bold;
-  margin-top: 1.25rem; /* 20px if base font-size is 16px */
-  text-transform: uppercase;
-}
 
 .blurredBackground {
   position: absolute;
@@ -49,3 +43,12 @@
 .cardHidden {
   display: none;
 }
+
+.title {
+  text-align: center; /* Centra il titolo */
+  color: #252d29; /* Colore del testo */
+  font-weight: bold; /* Peso del font per renderlo simile a un h1 */
+  margin-bottom: 2rem; /* Margine inferiore */
+  font-size: 3rem; /* Dimensione del font */
+}
+

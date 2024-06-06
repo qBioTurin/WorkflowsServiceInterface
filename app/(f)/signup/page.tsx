@@ -1,23 +1,25 @@
 "use client"
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { Container, Paper, Title, TextInput, Button, Group, PasswordInput, Center,UnstyledButton, Select } from '@mantine/core';
+
+import { useEffect, useState } from 'react';
+import { Container, Paper, Title, TextInput, Button, Group, PasswordInput, Center, UnstyledButton, Select } from '@mantine/core';
 import { IconUser, IconAt, IconLock, IconPhone, IconMapPin } from '@tabler/icons-react';
-import { MantineLogo } from '@mantinex/mantine-logo'; // Assicurati di sostituire con il tuo componente logo se necessario
+import { MantineLogo } from '@mantinex/mantine-logo';
 import { useRouter } from 'next/navigation';
+import { _addUser } from '@/utils/database/UserService';
+import { User } from '@/utils/models/user';
 
 export default function Registration() {
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
-  const [country, setCountry] = useState('');  // Default value can be adjusted if necessary
+  const [country, setCountry] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const countries = ['Country 1', 'Country 2', 'Country 3']; // Potentially fetched dynamically
+  const countries = ['Country 1', 'Country 2', 'Country 3'];
 
   useEffect(() => {
-    const header = document.getElementById('header') as HTMLElement | null;
+    const header = document.getElementById('header');
     if (header) header.style.display = 'none';
 
     return () => {
@@ -29,31 +31,27 @@ export default function Registration() {
     router.push(path);
   };
 
-  
-
-  const handleSubmit = async (e : any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const response = await fetch('/api/databaseRegister', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, phone, country, email, password })
-    });
-    
-    if (response.ok) {
-      const user :any = {
-        firstName,
-        lastName,
-        phone,
-        country,
-        email,
-        password // Nota: la password è inclusa qui per semplicità, ma come già discusso, è meglio non memorizzarla in produzione
-      };
+
+    const user: User = {  
+      id:1,
+      email,
+      password_hash: password, // In production, hash the password before storing it
+      first_name: firstName,
+      last_name: lastName,
+      phone,
+      country,
+    };
+
+    try {
+      const newUser = await _addUser(user);
 
       alert('Registration successful');
-      
-      localStorage.setItem('user', JSON.stringify(user));
-      router.push('/'); // Redirect to home page or other as required
-    } else {
+      localStorage.setItem('user', JSON.stringify(newUser));
+      router.push('/');
+    } catch (error) {
+      console.error('Registration error:', error);
       alert('Failed to register. Please try again.');
     }
   };
@@ -131,5 +129,4 @@ export default function Registration() {
       </Paper>
     </Container>
   );
-  
 }

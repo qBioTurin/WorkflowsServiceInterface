@@ -36,10 +36,7 @@ import classes from './DoubleHeader.module.css';
 
 import { User } from '@/utils/models/user';
 
-const tabs = [
-  { label: 'Home', path: '/' },
-  { label: 'Upload', path: '/upload' },
-];
+const tabs:any = [];
 
 interface HeaderProps {
   opened: boolean | undefined;
@@ -76,7 +73,7 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
     setUser(null);
   };
 
-  const items = tabs.map((tab) => (
+  const items = tabs.map((tab : any) => (
     <Tabs.Tab value={tab.label} key={tab.label}>
       <Link href={tab.path} passHref>
         <div onClick={() => setBurgerOpen(false)}>{tab.label}</div>
@@ -90,25 +87,24 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
         <Group justify="space-between">
           <Link href="/" passHref>
             <UnstyledButton title="Home">
-              <MantineLogo size={28} />
+            <img src="/images/logo.jpg" alt="Home" width={280} height={25} />
             </UnstyledButton>
           </Link>
-
           <Group hiddenFrom="sm">
-            <LightDark />
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
           </Group>
           <Group visibleFrom="sm">
-            <LightDark />
             {!user && (
               <Group visibleFrom="sm">
-                <Link href="/login" passHref>
-                  <Button variant="outline">Login</Button>
-                </Link>
-                <Link href="/signup" passHref>
-                  <Button variant="filled" color="blue">Signup</Button>
-                </Link>
-              </Group>
+              <Link href="/" passHref className={classes.link}>Home
+              </Link>
+              <Link href="/upload" passHref className={classes.link}>Upload
+              </Link>
+              <Link href="/login" passHref className={classes.link}>Login
+              </Link>
+              <Link href="/signup" passHref className={classes.link}>Signup
+              </Link>
+            </Group>
             )}
             {user && (
               <Menu

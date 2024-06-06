@@ -10,7 +10,7 @@ RUN apk update && apk add at
 COPY package*.json ./
 
 # Installa dipendenze e pulisce la cache per ridurre la dimensione dell'immagine
-RUN npm ci --production && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 # Copia il resto del codice sorgente
 COPY . .

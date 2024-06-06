@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import  { Step } from '../../utils/data/workflow'
 import classes from './WorkflowCard.module.css';
+import { accentGreenColor } from '@/utils/color/color';
 
 interface WorkflowStepCardProps {
   step: Step;
@@ -25,7 +26,7 @@ const WorkflowStepCard: React.FC<WorkflowStepCardProps> = ({ step, blurred,workf
   };
   `/workflowdetails/${workflowName}`
   return (
-    <Card className={`${classes.card} `} onClick={() => handleTabClick('/workflowdetails/'+workflowName,step.url)}>
+    <Card className={`${classes.card} `} onClick={() => handleTabClick('/workflowdetails/'+workflowName,step.url)} style={{ backgroundColor:accentGreenColor }}>
       <AspectRatio ratio={1920 / 1080}>
         <Image src={step.image} alt={`Immagine per ${step.nome}`} style={blurred ? { filter: 'blur(4px)' } : {}} />
       </AspectRatio>

@@ -2,12 +2,13 @@
 import { SimpleGrid, Card, Image, Text, Container, AspectRatio,Title  } from '@mantine/core';
 import { useState, useEffect } from 'react';
 import {Workflow} from '../../utils/data/workflow'
-import WorkflowData from '../../utils/data/workflow'
 import { useRouter } from 'next/navigation';
 import WorkflowCard from '../../components/WorkflowCard/WorkflowCard'; // Assicurati che il percorso sia corretto
 import {Step} from '../../utils/data/workflow'
 import { _getAllUsers } from '@/utils/database/UserService';
 import { _getWorkflowData } from '@/utils/database/WorkflowDataService';
+import classes from './ArticlesCardsGrid.module.css'
+import { accentColor,accentColorHover } from '@/utils/color/color';
 
 export function ArticlesCardsGrid() {
 
@@ -81,7 +82,7 @@ export function ArticlesCardsGrid() {
       }
     } 
   };
-  const content = WorkflowData.map((workflow) => (
+  const content = workflowData.map((workflow) => (
     <div key={workflow.nome}>
       <Title order={2} mt="xl" mb="md">{workflow.nome}</Title>
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
@@ -96,8 +97,18 @@ export function ArticlesCardsGrid() {
   ));
 
   return (
-    <Container py="xl">
-      <Title order={1} mb="lg">Tutte le nostre applicazioni</Title>
+    <Container>
+      <div className={classes.title}>
+        List of{" "}
+        <Text
+          span
+          variant="gradient"
+          gradient={{ from: accentColor, to: accentColorHover, deg: 90 }}
+          inherit
+          >
+          Workflows
+          </Text>
+      </div>
       {content}
     </Container>
   );
