@@ -23,7 +23,6 @@ const FileInput: React.FC<FileInputProps> = ({ file, setFile, label }) => (
           id={`file-upload-${label}`}
           style={{ display: 'none' }}
           onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-          accept=".pdf, .csv"
         />
         <label htmlFor={`file-upload-${label}`}>
           <Button component="span" leftSection={<IconUpload size={16} />}>
@@ -31,7 +30,7 @@ const FileInput: React.FC<FileInputProps> = ({ file, setFile, label }) => (
           </Button>
           {label}
         </label>
-        <Tooltip label="Supports .pdf and .csv files up to 5MB." position="right">
+        <Tooltip label="Supports all types of files" position="right">
           <IconInfoCircle size={16} style={{ cursor: 'help', marginLeft: 10 }} />
         </Tooltip>
       </>
