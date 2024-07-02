@@ -24,7 +24,7 @@ export default function Footer() {
   ));
 
   return (
-    <div style={{ backgroundColor:"#ECE9EA"}} id="footer" className={`${classes.footer} mt-auto`}>
+    <div style={{ backgroundColor:"#3F4643"}} id="footer" className={`${classes.footer} mt-auto`}>
         <Container className={`${classes.inner} footer absolute bottom-0 w-full`} >
           <MantineLogo size={28} />
           <Group className={classes.links}>{items}</Group>

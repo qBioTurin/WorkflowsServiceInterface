@@ -1,11 +1,11 @@
 import { Pool } from 'pg';
 
 const pool = new Pool({
-    host: "localhost",
+    host: 'postgres',
     port: 5432,
-    user: "postgres",
-    password: "",
-    database: "stageProvaDocker"
+    user: 'postgres',
+    password: 'password2',
+    database: 'postgres'
 });
 
 export const query = (text: string, params: any[]) => pool.query(text, params);

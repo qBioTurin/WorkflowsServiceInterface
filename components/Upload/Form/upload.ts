@@ -2,47 +2,43 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { exec } from 'child_process';
 
-export async function submitAnalysis(formData: FormData): Promise<{ success: boolean, error?: string }> {
+type FormData = {
+  analysisName: string;
+  file1Path: string;
+  file2Path: string;
+};
+
+type ApiResponse = {
+  success: boolean;
+  error?: string;
+};
+
+export async function submitAnalysis(formData: FormData): Promise<ApiResponse> {
   try {
     const uniqueId = uuidv4();
-    const analysisName = formData.get('analysisName') as string;
+    const analysisName = formData.analysisName;
     const analysisDir = path.join(process.cwd(), 'public', 'storage', 'utente1', `${analysisName}-${getCurrentDateFormatted()}-${uniqueId}`);
     const storageDir = path.join(analysisDir, 'input');
 
     await fs.mkdir(storageDir, { recursive: true });
 
-    const file1 = formData.get('file1') as File;
-    const file2 = formData.get('file2') as File;
-    await saveUploadedFile(file1, storageDir);
-    await saveUploadedFile(file2, storageDir);
+    // Copy files to storage directory
+    await fs.copyFile(formData.file1Path, path.join(storageDir, path.basename(formData.file1Path)));
+    await fs.copyFile(formData.file2Path, path.join(storageDir, path.basename(formData.file2Path)));
 
-    const configFileContent = `
-      raw_data:
-        class: Directory
-        location: .
-      threads: 5
-      file:
-        class: File
-        path: input
-    `;
-    const configFilePath = path.join(storageDir, 'config.yml');
-    await fs.writeFile(configFilePath, configFileContent);
+    await copyConfigFile('config.yml', storageDir);
+    await copyConfigFile('streamflow.yml', storageDir);
+
+    await createStartScript(storageDir);
 
     const reportDir = path.join(analysisDir, 'output');
     await fs.mkdir(reportDir, { recursive: true });
 
-    const metadataPath = path.join(reportDir, `metadata-workflow-${uniqueId}.report`);
-    const reportContent = `
-      USER:
-      DATA:
-      ORA:
-      WORKFLOW NAME:
-      ERROR: false
-      SCADENZA-FILE-SU-MACCHINA: ${calculateExpirationDate(new Date())}
-    `.trim();
-    await fs.writeFile(metadataPath, reportContent);
-    
+    await createReportFile(reportDir, uniqueId);
+
+    await copyFilesToRemote(storageDir);
 
     return { success: true };
   } catch (error: any) {
@@ -50,16 +46,54 @@ export async function submitAnalysis(formData: FormData): Promise<{ success: boo
   }
 }
 
-async function saveUploadedFile(file: File, storageDir: string): Promise<void> {
-  const filePath = path.join(storageDir, file.name);
-  const buffer = Buffer.from(await file.arrayBuffer());
+async function copyConfigFile(fileName: string, destinationDir: string): Promise<void> {
+  const srcPath = path.join(process.cwd(), 'public', 'model', fileName);
+  const destPath = path.join(destinationDir, fileName);
+  await fs.copyFile(srcPath, destPath);
+}
 
-  // Scrittura del file
-  await fs.writeFile(filePath, buffer);
+async function createStartScript(storageDir: string): Promise<void> {
+  const scriptContent = `
+#!/bin/bash
+echo "avviato in maniera corretta" > ${path.join(storageDir, 'log.txt')}
+  `.trim();
 
-  // Apertura e chiusura immediata del file per assicurare che tutte le operazioni siano complete
-  const fileHandle = await fs.open(filePath, 'r');
-  await fileHandle.close();
+  const scriptPath = path.join(storageDir, 'start_analysis.sh');
+  await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 });
+}
+
+async function createReportFile(reportDir: string, uniqueId: string): Promise<void> {
+  const metadataPath = path.join(reportDir, `metadata-workflow-${uniqueId}.report`);
+  const reportContent = `
+    USER:
+    DATA:
+    ORA:
+    WORKFLOW NAME:
+    ERROR: false
+    SCADENZA-FILE-SU-MACCHINA: ${calculateExpirationDate(new Date())}
+  `.trim();
+  await fs.writeFile(metadataPath, reportContent);
+}
+
+async function copyFilesToRemote(storageDir: string): Promise<void> {
+  const remoteUser = 'gforestello';
+  const remoteHost = '130.192.212.55';
+  const remotePath = '/comandi';
+  const passphrase = 'idronight';
+
+  const command = `sshpass -p ${passphrase} scp -r ${storageDir} ${remoteUser}@${remoteHost}:${remotePath}`;
+
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Error in copyFilesToRemote: ${error.message}`));
+      } else if (stderr) {
+        reject(new Error(`Stderr: ${stderr}`));
+      } else {
+        resolve();
+      }
+    });
+  });
 }
 
 function getCurrentDateFormatted(): string {

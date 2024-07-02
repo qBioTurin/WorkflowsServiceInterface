@@ -1,7 +1,14 @@
 "use server";
 import fs from 'fs';
 import path from 'path';
-import { Case } from '@/utils/models/case';
+
+interface Case {
+  id: string;
+  name: string;
+  creationDate: string;
+  status: 'Pending' | 'Completed';
+  downloadUrl: string;
+}
 
 export const getReports = async (): Promise<Case[]> => {
   const reportsDir = path.join(process.cwd(), 'public', 'storage', 'utente1');
@@ -13,16 +20,19 @@ export const getReports = async (): Promise<Case[]> => {
     reportDirs.forEach((dir) => {
       const reportPath = path.join(reportsDir, dir);
       if (fs.lstatSync(reportPath).isDirectory()) {
-        const pdfFiles = fs.readdirSync(path.join(reportPath, 'input')).filter((file) => file.endsWith('.pdf'));
-        if (pdfFiles.length > 0) {
-          const caseItem: Case = {
-            id: dir,
-            name: pdfFiles[0],
-            creationDate: fs.statSync(reportPath).birthtime.toISOString().split('T')[0],
-            status: 'Completed',
-            downloadUrl: `/storage/utente1/${dir}/input/${pdfFiles[0]}`,
-          };
-          cases.push(caseItem);
+        const inputDir = path.join(reportPath, 'input');
+        const files = fs.readdirSync(inputDir);
+        if (files.length > 0) {
+          files.forEach((file) => {
+            const caseItem: Case = {
+              id: dir,
+              name: file,
+              creationDate: fs.statSync(reportPath).birthtime.toISOString().split('T')[0],
+              status: 'Completed',
+              downloadUrl: '', // URL del server di download, lasciato vuoto
+            };
+            cases.push(caseItem);
+          });
         }
       }
     });
@@ -31,4 +41,21 @@ export const getReports = async (): Promise<Case[]> => {
   }
 
   return cases;
+};
+
+export const downloadReport = async (caseId: string, filename: string): Promise<Blob> => {
+  const response = await fetch(`http://download-server:3001/download`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ caseId, filename }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to download file');
+  }
+
+  const blob = await response.blob();
+  return blob;
 };

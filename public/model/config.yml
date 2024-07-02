@@ -1,0 +1,10 @@
+genome_size: 13m
+fastq_directory:
+  class: Directory
+  path: /storage/tmp/input
+nanopore: true
+prefix: assembly
+threads: 36
+assembly_canu: canu
+assembly_flye: flye 
+assembly_wtdbg2: wtdbg2

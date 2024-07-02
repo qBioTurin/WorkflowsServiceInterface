@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Container, Table, Button, Group, Text, Box, Pagination, TextInput } from '@mantine/core';
 import { IconPlus, IconSearch, IconFilter } from '@tabler/icons-react';
-import useDownloader from 'react-use-downloader';
 import { getReports } from './report';
 
 interface Case {
@@ -15,7 +14,6 @@ interface Case {
 }
 
 export default function HomePage() {
-  const { size, elapsed, percentage, download, cancel, error, isInProgress } = useDownloader();
   const [cases, setCases] = useState<Case[]>([]);
 
   useEffect(() => {
@@ -31,8 +29,31 @@ export default function HomePage() {
     fetchCases();
   }, []);
 
-  const handleDownload = (url: string, filename: string) => {
-    download(url, filename);
+  const handleDownload = async (caseId: string, filename: string) => {
+    try {
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ caseId, filename }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download file');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to download file:', error);
+    }
   };
 
   const icon = <IconSearch style={{ width: '16 rem', height: '16 rem' }} />;
@@ -70,7 +91,7 @@ export default function HomePage() {
                 </td>
                 <td>
                   {caseItem.status === 'Completed' ? (
-                    <Button onClick={() => handleDownload(caseItem.downloadUrl, caseItem.name)}>
+                    <Button onClick={() => handleDownload(caseItem.id, caseItem.name)}>
                       Scarica resoconto
                     </Button>
                   ) : (
