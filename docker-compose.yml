@@ -26,6 +26,8 @@ services:
       - postgres
     volumes:
       - storage-volume:/app/public
+      - ~/.ssh/id_rsa:/root/.ssh/id_rsa
+      - ~/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub
     networks:
       - workflowsserviceinterface-network
     ports:

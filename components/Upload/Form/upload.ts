@@ -19,8 +19,10 @@ export async function submitAnalysis(formData: FormData): Promise<ApiResponse> {
   try {
     const uniqueId = uuidv4();
     const analysisName = formData.analysisName;
-    const analysisDir = path.join(process.cwd(), 'public', 'storage', 'utente1', `${analysisName}-${getCurrentDateFormatted()}-${uniqueId}`);
+    const analysisNameID = `${analysisName}-${getCurrentDateFormatted()}-${uniqueId}`;
+    const analysisDir = path.join(process.cwd(), 'public', 'storage', 'utente1', `${analysisNameID}`);
     const storageDir = path.join(analysisDir, 'input');
+    const outputDir = path.join(analysisDir,);
 
     await fs.mkdir(storageDir, { recursive: true });
 
@@ -31,14 +33,23 @@ export async function submitAnalysis(formData: FormData): Promise<ApiResponse> {
     await copyConfigFile('config.yml', storageDir);
     await copyConfigFile('streamflow.yml', storageDir);
 
-    await createStartScript(storageDir);
+    await createStartScript(storageDir,analysisNameID);
 
     const reportDir = path.join(analysisDir, 'output');
     await fs.mkdir(reportDir, { recursive: true });
 
     await createReportFile(reportDir, uniqueId);
 
-    await copyFilesToRemote(storageDir);
+    await copyFilesToRemote(storageDir,analysisNameID);
+
+    await executeRemoteScript(analysisDir,analysisNameID);
+    //return { success: true };
+
+    await copyResultsBackToLocal(analysisNameID+"/output",outputDir);
+
+    await removeRemoteDirectory(`utente1/${analysisNameID}`);
+
+    //await removeLocalDirectory(storageDir);
 
     return { success: true };
   } catch (error: any) {
@@ -52,13 +63,28 @@ async function copyConfigFile(fileName: string, destinationDir: string): Promise
   await fs.copyFile(srcPath, destPath);
 }
 
-async function createStartScript(storageDir: string): Promise<void> {
+async function removeLocalDirectory(localPath: string): Promise<void> {
+  await fs.rm(localPath, { recursive: true, force: true });
+}
+
+async function createStartScript(storageDir: string,analysisNameID:string): Promise<void> {
   const scriptContent = `
 #!/bin/bash
-echo "avviato in maniera corretta" > ${path.join(storageDir, 'log.txt')}
+
+# Creare la cartella di output se non esiste
+mkdir -p "utente1/${analysisNameID}/output"
+
+# Creare il file di log
+echo "avviato in maniera corretta" > "utente1/${analysisNameID}/output/log.txt"
+
+# Simulare un processo del workflow
+sleep 10
+
+# Aggiornare il file di log
+echo "workflow completato" >> "utente1/${analysisNameID}/output/log.txt"
   `.trim();
 
-  const scriptPath = path.join(storageDir, 'start_analysis.sh');
+  const scriptPath = path.join(storageDir, 'runWorkflow.sh');
   await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 });
 }
 
@@ -75,13 +101,27 @@ async function createReportFile(reportDir: string, uniqueId: string): Promise<vo
   await fs.writeFile(metadataPath, reportContent);
 }
 
-async function copyFilesToRemote(storageDir: string): Promise<void> {
+async function copyFilesToRemote(storageDir: string, remoteFolderName:string): Promise<void> {
   const remoteUser = 'gforestello';
   const remoteHost = '130.192.212.55';
-  const remotePath = '/comandi';
-  const passphrase = 'idronight';
+  const remotePath = `utente1/${remoteFolderName}`; // Percorso remoto appropriato
 
-  const command = `sshpass -p ${passphrase} scp -r ${storageDir} ${remoteUser}@${remoteHost}:${remotePath}`;
+  // Ensure the remote directory exists
+  const mkdirCommand = `ssh -i /root/.ssh/id_rsa ${remoteUser}@${remoteHost} 'mkdir -p ${remotePath}'`;
+  
+  await new Promise<void>((resolve, reject) => {
+    exec(mkdirCommand, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Error in creating remote directory: ${error.message}`));
+      } else if (stderr) {
+        reject(new Error(`Stderr while creating remote directory: ${stderr}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+
+  const command = `scp -i /root/.ssh/id_rsa -r ${storageDir} ${remoteUser}@${remoteHost}:${remotePath}`;
 
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
@@ -89,6 +129,65 @@ async function copyFilesToRemote(storageDir: string): Promise<void> {
         reject(new Error(`Error in copyFilesToRemote: ${error.message}`));
       } else if (stderr) {
         reject(new Error(`Stderr: ${stderr}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+async function executeRemoteScript(analysisDir: string,remotePath:string): Promise<void> {
+  const remoteUser = 'gforestello';
+  const remoteHost = '130.192.212.55';
+  const remoteScriptPath = path.join('utente1', path.basename(analysisDir), 'input', 'runWorkflow.sh');
+  remotePath = `utente1/${remotePath}/output`
+
+  const command = `ssh -i /root/.ssh/id_rsa ${remoteUser}@${remoteHost} 'bash ${remoteScriptPath}'`;
+
+  await new Promise<void>((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Error in executeRemoteScript: ${error.message}`));
+      } else if (stderr) {
+        reject(new Error(`Stderr: ${stderr}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+async function copyResultsBackToLocal(reportDir: string, localDirecotry : string): Promise<void> {
+  const remoteUser = 'gforestello';
+  const remoteHost = '130.192.212.55';
+  const remoteOutputDir = `utente1/${reportDir}`; // Percorso remoto appropriato
+
+  const command = `scp -i /root/.ssh/id_rsa -r ${remoteUser}@${remoteHost}:${remoteOutputDir} ${localDirecotry}`;
+
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Error in copyResultsBackToLocal: ${error.message}`));
+      } else if (stderr) {
+        reject(new Error(`Stderr: ${stderr}`));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+async function removeRemoteDirectory(remotePath: string): Promise<void> {
+  const remoteUser = 'gforestello';
+  const remoteHost = '130.192.212.55';
+  const removeCommand = `ssh -i /root/.ssh/id_rsa ${remoteUser}@${remoteHost} 'rm -rf ${remotePath}'`;
+
+  await new Promise<void>((resolve, reject) => {
+    exec(removeCommand, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Error in removing remote directory: ${error.message}`));
+      } else if (stderr) {
+        reject(new Error(`Stderr while removing remote directory: ${stderr}`));
       } else {
         resolve();
       }

@@ -1,7 +1,7 @@
 genome_size: 13m
 fastq_directory:
   class: Directory
-  path: /storage/tmp/input
+  path: /home/gforestello/utente1/input
 nanopore: true
 prefix: assembly
 threads: 36
