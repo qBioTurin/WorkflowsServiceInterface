@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
 // Endpoint per il download dei file
 app.post('/download', (req, res) => {
     const { caseId, filename } = req.body;
-    const filePath = path.join(__dirname, '../public/storage', 'utente1', caseId, 'input', filename);
+    const filePath = path.join(__dirname, '../public/storage', 'utente1', caseId, 'output', 'log.txt');
     console.log("Apro questo file: " + filePath);
     res.download("."+filePath); // Serve the file for downloading
 });

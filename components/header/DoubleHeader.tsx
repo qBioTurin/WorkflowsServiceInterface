@@ -1,6 +1,8 @@
+// components/DoubleHeader.tsx
+
 "use client";
 import cx from 'clsx';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { LightDark } from '../light-dark/LightDark';
 import Link from 'next/link';
 
@@ -17,9 +19,7 @@ import {
   rem,
   Collapse,
   useMantineTheme,
-  Button,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import {
   IconFileAnalytics,
   IconLogout,
@@ -31,10 +31,9 @@ import {
   IconChevronDown,
   IconUpload,
 } from '@tabler/icons-react';
-import { MantineLogo } from '@mantinex/mantine-logo';
 import classes from './DoubleHeader.module.css';
 
-import { User } from '@/utils/models/user';
+import { useAuth } from '@/utils/auth';
 
 const tabs:any = [];
 
@@ -47,31 +46,7 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
   const theme = useMantineTheme();
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        if (userData && typeof userData === 'object') {
-          console.log('Recovered user:', userData);
-          setUser(userData);
-        } else {
-          console.error('Invalid user data');
-          localStorage.removeItem('user');
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-  };
+  const { user, logout } = useAuth();
 
   const items = tabs.map((tab : any) => (
     <Tabs.Tab value={tab.label} key={tab.label}>
@@ -87,26 +62,21 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
         <Group justify="space-between">
           <Link href="/" passHref>
             <UnstyledButton title="Home">
-            <img src="/images/logo.jpg" alt="Home" width={280} height={25} />
+              <img src="/images/logo.jpg" alt="Home" width={280} height={25} />
             </UnstyledButton>
           </Link>
           <Group hiddenFrom="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
           </Group>
           <Group visibleFrom="sm">
-            {!user && (
+            {!user ? (
               <Group visibleFrom="sm">
-              <Link href="/" passHref className={classes.link}>Home
-              </Link>
-              <Link href="/upload" passHref className={classes.link}>Upload
-              </Link>
-              <Link href="/login" passHref className={classes.link}>Login
-              </Link>
-              <Link href="/signup" passHref className={classes.link}>Signup
-              </Link>
-            </Group>
-            )}
-            {user && (
+                <Link href="/" passHref className={classes.link}>Home</Link>
+                <Link href="/upload" passHref className={classes.link}>Upload</Link>
+                <Link href="/login" passHref className={classes.link}>Login</Link>
+                <Link href="/signup" passHref className={classes.link}>Signup</Link>
+              </Group>
+            ) : (
               <Menu
                 width={260}
                 position="bottom-end"
@@ -132,8 +102,7 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                       <IconFileAnalytics style={{ width: rem(16), height: rem(16) }} color={theme.colors.blue[6]} stroke={1.5} />
                     }
                   >
-                    <Link href="/reports" passHref>Your Reports
-                    </Link>
+                    <Link href="/reports" passHref>Your Reports</Link>
                   </Menu.Item>
                   <Menu.Label>Settings</Menu.Label>
                   <Menu.Item
@@ -141,22 +110,20 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                       <IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                     }
                   >
-                    <Link href="/account" passHref>Account settings
-                    </Link>
+                    <Link href="/account" passHref>Account settings</Link>
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
                       <IconSwitchHorizontal style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                     }
                   >
-                    <Link href="/changeAccount" passHref>Change account
-                    </Link>
+                    <Link href="/changeAccount" passHref>Change account</Link>
                   </Menu.Item>
                   <Menu.Item
                     leftSection={
                       <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                     }
-                    onClick={handleLogout}
+                    onClick={logout}
                   >
                     Logout
                   </Menu.Item>
@@ -188,16 +155,14 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
               <IconHome style={{ width: rem(16), height: rem(16) }} color={theme.colors.blue[6]} stroke={1.5} />
             }
           >
-            <Link href="/" passHref>Home
-            </Link>
+            <Link href="/" passHref>Home</Link>
           </Menu.Item>
           <Menu.Item
             leftSection={
               <IconUpload style={{ width: rem(16), height: rem(16) }} color={theme.colors.blue[6]} stroke={1.5} />
             }
           >
-            <Link href="/upload" passHref>Upload
-            </Link>
+            <Link href="/upload" passHref>Upload</Link>
           </Menu.Item>
 
           {user && (
@@ -208,30 +173,27 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                   <IconFileAnalytics style={{ width: rem(16), height: rem(16) }} color={theme.colors.blue[6]} stroke={1.5} />
                 }
               >
-                <Link href="/reports" passHref>Your Reports
-                </Link>
+                <Link href="/reports" passHref>Your Reports</Link>
               </Menu.Item>
               <Menu.Item
                 leftSection={
                   <IconSettings style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                 }
               >
-                <Link href="/account" passHref>Account settings
-                </Link>
+                <Link href="/account" passHref>Account settings</Link>
               </Menu.Item>
               <Menu.Item
                 leftSection={
                   <IconSwitchHorizontal style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                 }
               >
-                <Link href="/changeAccount" passHref>Change account
-                </Link>
+                <Link href="/changeAccount" passHref>Change account</Link>
               </Menu.Item>
               <Menu.Item
                 leftSection={
                   <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                 }
-                onClick={handleLogout}
+                onClick={logout}
               >
                 Logout
               </Menu.Item>
@@ -247,18 +209,14 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                   <IconLogin style={{ width: rem(16), height: rem(16) }} color={theme.colors.blue[6]} stroke={1.5} />
                 }
               >
-                <Link href="/login" passHref>
-                  Login
-                </Link>
+                <Link href="/login" passHref>Login</Link>
               </Menu.Item>
               <Menu.Item
                 leftSection={
                   <IconUserPlus style={{ width: rem(16), height: rem(16) }} color={theme.colors.blue[6]} stroke={1.5} />
                 }
               >
-                <Link href="/signup" passHref>
-                  Signup
-                </Link>
+                <Link href="/signup" passHref>Signup</Link>
               </Menu.Item>
             </>
           )}
@@ -266,6 +224,6 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
       </Collapse>
     </div>
   );
-}
+};
 
 export default DoubleHeader;

@@ -17,6 +17,27 @@ services:
     networks:
       - workflowsserviceinterface-network
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    command: start-dev # Aggiunto comando per avviare Keycloak in modalità sviluppo
+    restart: always
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_DATABASE: postgres
+      DB_USER: postgres
+      DB_SCHEMA: public
+      DB_PASSWORD: password2
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080" # La porta è stata inserita perchè ho intenzione di aggiungere configurazioni manualmente
+    depends_on:
+      - postgres
+    networks:
+      - workflowsserviceinterface-network
+    
+
   workflowsserviceinterface-server:
     build:
       context: .
@@ -28,6 +49,7 @@ services:
       - storage-volume:/app/public
       - ~/.ssh/id_rsa:/root/.ssh/id_rsa
       - ~/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub
+      - ./logs:/app/logs  # Volume per i log
     networks:
       - workflowsserviceinterface-network
     ports:
