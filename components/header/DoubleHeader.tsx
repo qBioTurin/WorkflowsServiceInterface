@@ -1,14 +1,11 @@
-// components/DoubleHeader.tsx
-
 "use client";
 import cx from 'clsx';
-import { useState } from 'react';
-import { LightDark } from '../light-dark/LightDark';
+import React, { useState } from 'react';
 import Link from 'next/link';
-
+import { useRouter } from 'next/navigation';  // Per il redirect
+import axios from 'axios';  // Per la chiamata all'API di logout
 import {
   Container,
-  Divider,
   Avatar,
   UnstyledButton,
   Group,
@@ -32,8 +29,7 @@ import {
   IconUpload,
 } from '@tabler/icons-react';
 import classes from './DoubleHeader.module.css';
-
-import { useAuth } from '@/utils/auth';
+import { useAuth } from '@/utils/auth';  // Importa l'hook useAuth
 
 const tabs:any = [];
 
@@ -46,7 +42,18 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
   const theme = useMantineTheme();
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
-  const { user, logout } = useAuth();
+  
+  const { user, logout, isAuthenticated } = useAuth();  // Ottieni lo stato dell'utente e il logout dal contesto
+
+  const handleLogout = async () => {
+    try {
+      // Fai la richiesta di logout alla tua API Next.js
+      await axios.get('/api/logout');
+      logout();  // Esegui anche la funzione di logout dal contesto
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const items = tabs.map((tab : any) => (
     <Tabs.Tab value={tab.label} key={tab.label}>
@@ -65,18 +72,14 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
               <img src="/images/logo.jpg" alt="Home" width={280} height={25} />
             </UnstyledButton>
           </Link>
+
           <Group hiddenFrom="sm">
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
           </Group>
+
           <Group visibleFrom="sm">
-            {!user ? (
-              <Group visibleFrom="sm">
-                <Link href="/" passHref className={classes.link}>Home</Link>
-                <Link href="/upload" passHref className={classes.link}>Upload</Link>
-                <Link href="/login" passHref className={classes.link}>Login</Link>
-                <Link href="/signup" passHref className={classes.link}>Signup</Link>
-              </Group>
-            ) : (
+            {/* Se l'utente è autenticato, mostra il menu utente */}
+            {isAuthenticated ? (
               <Menu
                 width={260}
                 position="bottom-end"
@@ -88,9 +91,9 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                 <Menu.Target>
                   <UnstyledButton className={cx(classes.user, { [classes.userActive]: userMenuOpened })}>
                     <Group gap={7}>
-                      <Avatar src={user.first_name} alt={user.first_name} radius="xl" size={20} />
-                      <Text fw={500} size="sm" lh={1} mr={3}>
-                        {user.first_name}
+                      <Avatar src={user?.first_name} alt={user?.first_name} radius="xl" size={20} />
+                      <Text fw={500} size="sm" style={{ lineHeight: '1' }} mr={3}>
+                        {user?.first_name}
                       </Text>
                       <IconChevronDown style={{ width: rem(12), height: rem(12) }} stroke={1.5} />
                     </Group>
@@ -123,16 +126,25 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                     leftSection={
                       <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                     }
-                    onClick={logout}
+                    onClick={handleLogout}  // Collega il logout alla chiamata API e contesto
                   >
                     Logout
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>
+            ) : (
+              // Se l'utente non è autenticato, mostra le opzioni di login/registrazione
+              <Group visibleFrom="sm">
+                <Link href="/" passHref className={classes.link}>Home</Link>
+                <Link href="/upload" passHref className={classes.link}>Upload</Link>
+                <Link href="/login" passHref className={classes.link}>Login</Link>
+                <Link href="/signup" passHref className={classes.link}>Signup</Link>
+              </Group>
             )}
           </Group>
         </Group>
       </Container>
+
       <Container size="md">
         <Tabs
           defaultValue="Home"
@@ -147,6 +159,7 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
           <Tabs.List>{items}</Tabs.List>
         </Tabs>
       </Container>
+
       <Collapse in={burgerOpen} hiddenFrom="xs">
         <Menu>
           <Menu.Label>Areas</Menu.Label>
@@ -165,7 +178,7 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
             <Link href="/upload" passHref>Upload</Link>
           </Menu.Item>
 
-          {user && (
+          {isAuthenticated && (
             <>
               <Menu.Label>Account</Menu.Label>
               <Menu.Item
@@ -193,15 +206,14 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
                 leftSection={
                   <IconLogout style={{ width: rem(16), height: rem(16) }} stroke={1.5} />
                 }
-                onClick={logout}
+                onClick={handleLogout}
               >
                 Logout
               </Menu.Item>
             </>
           )}
-          <Divider />
 
-          {!user && (
+          {!isAuthenticated && (
             <>
               <Menu.Label>Account</Menu.Label>
               <Menu.Item

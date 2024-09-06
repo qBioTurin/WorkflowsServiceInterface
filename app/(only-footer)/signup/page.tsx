@@ -1,12 +1,10 @@
-"use client"
-
+'use client';
 import { useState } from 'react';
 import { Container, Paper, Title, TextInput, Button, Group, PasswordInput, Center, UnstyledButton } from '@mantine/core';
 import { IconUser, IconAt, IconLock } from '@tabler/icons-react';
-import { MantineLogo } from '@mantinex/mantine-logo';
 import { useRouter } from 'next/navigation';
 
-export default function Registration() {
+export default function RegistrationPage() {
   const router = useRouter();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -23,7 +21,7 @@ export default function Registration() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: email.split('@')[0], // Lo username è basato sull'email
+          username: email.split('@')[0], // Use email as base for username
           email,
           firstName,
           lastName,
@@ -31,12 +29,11 @@ export default function Registration() {
         }),
       });
 
-      const result = await response.json();
-
       if (response.ok) {
         alert('Registration successful');
-        router.push('/login'); 
+        router.push('/login');
       } else {
+        const result = await response.json();
         alert(`Registration failed: ${result.error}`);
       }
     } catch (error) {
@@ -46,49 +43,70 @@ export default function Registration() {
   };
 
   return (
-    <Container size={420} my={40}>
+    <Container
+      size={420}
+      my={40}
+      style={{
+        backgroundColor: 'rgb(236, 233, 234)', // Colore dello sfondo
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+      }}
+    >
       <Center mb="xl">
-        <UnstyledButton onClick={() => router.push('/')} title="Home">
-          <MantineLogo size={80} />
+        <UnstyledButton title="Home" onClick={() => router.push('/')}>
+          <img src="/images/logo.jpg" alt="Home" width={280} height={25} />
         </UnstyledButton>
       </Center>
       <Paper withBorder shadow="md" p={30} radius="md">
-        <Title mb="lg">Sign Up</Title>
+        <Title style={{ textAlign: 'center' }} mb="lg">Sign Up</Title>
         <form onSubmit={handleSubmit}>
           <TextInput
-            leftSection={<IconUser />}
             label="First Name"
             placeholder="John"
-            required
+            leftSection={<IconUser size="1rem" />}
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={(e) => setFirstName(e.currentTarget.value)}
+            required
+            mb="md"
           />
           <TextInput
-            leftSection={<IconUser />}
             label="Last Name"
             placeholder="Doe"
-            required
+            leftSection={<IconUser size="1rem" />}
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
+            onChange={(e) => setLastName(e.currentTarget.value)}
+            required
+            mb="md"
           />
           <TextInput
-            leftSection={<IconAt />}
             label="Email"
             placeholder="you@example.com"
-            required
+            leftSection={<IconAt size="1rem" />}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.currentTarget.value)}
+            required
+            mb="md"
           />
           <PasswordInput
-            leftSection={<IconLock />}
             label="Password"
             placeholder="Your password"
-            required
+            rightSection={<IconLock size="1rem" />}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.currentTarget.value)}
+            required
+            mb="md"
           />
           <Group mt="md">
-            <Button type="submit" variant="filled">Register</Button>
+            <Button
+              type="submit"
+              style={{
+                backgroundColor: 'rgb(225, 146, 67)', // Colore del pulsante
+              }}
+            >
+              Register
+            </Button>
           </Group>
         </form>
       </Paper>

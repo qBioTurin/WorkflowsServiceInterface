@@ -30,7 +30,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 
 # Aggiungi il server remoto agli host conosciuti
-RUN mkdir -p /root/.ssh && ssh-keyscan -H 130.192.212.55 >> /root/.ssh/known_hosts
+RUN mkdir -p /root/.ssh && \
+    for i in {1..5}; do ssh-keyscan -H 130.192.212.55 >> /root/.ssh/known_hosts && break || sleep 5; done
+
 
 # Copia l'entrypoint script e rendilo eseguibile
 COPY entrypoint.sh /entrypoint.sh

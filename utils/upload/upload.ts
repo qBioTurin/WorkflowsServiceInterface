@@ -9,10 +9,8 @@ import { insertAnalysis, insertReportFile } from '@/utils/database/Analysis';
 
 type FormData = {
   analysisName: string;
-  file1Path?: string;
-  file2Path?: string;
-  link1?: string;
-  link2?: string;
+  file1Path: string;
+  file2Path: string;
 };
 
 type ApiResponse = {
@@ -53,12 +51,14 @@ async function executeCommand(command: string): Promise<void> {
 }
 
 export async function submitAnalysis(formData: FormData): Promise<ApiResponse> {
+  console.log("chiaro di corretta chiamata");
   try {
+    
     logger.info(`Messaggio chiaro di corretta chiamata`);
 
     if (!formData.analysisName || 
-        (!formData.file1Path && !formData.link1) || 
-        (!formData.file2Path && !formData.link2)) {
+        (!formData.file1Path) || 
+        (!formData.file2Path)) {
       logger.error('Missing files or analysis name');
       throw new Error('Missing files or analysis name');
     }
@@ -69,8 +69,7 @@ export async function submitAnalysis(formData: FormData): Promise<ApiResponse> {
     try{
       asyncUpload(formData,analysisNameID,nomeUtente,uniqueId);
       return { success: true };
-    }catch(err:any){
-      sendMail(nomeUtente, `L'analisi con ID ${analysisNameID} è stata completata con successo.`);
+    }catch(err:any){sendMail(nomeUtente, `Si è verificato un errore per l'analisi ${analysisNameID}: ${err}`,"error");
       return { success: false, error: err.message };
     }
   } catch (error: any) {
@@ -87,6 +86,8 @@ async function asyncUpload(formData: FormData,analysisNameID:string,nomeUtente:s
   const storageDir = path.join(analysisDir, 'input');
   const outputDir = path.join(analysisDir, 'output');
 
+  sendMail(nomeUtente, `L'analisi con ID ${analysisNameID} è stata presa in carico.`,"start");
+
   await fs.mkdir(storageDir, { recursive: true });
   logger.info(`Created storage directory at ${storageDir}`);
 
@@ -94,12 +95,9 @@ async function asyncUpload(formData: FormData,analysisNameID:string,nomeUtente:s
     await fs.copyFile(formData.file1Path, path.join(storageDir, path.basename(formData.file1Path)));
     await fs.copyFile(formData.file2Path, path.join(storageDir, path.basename(formData.file2Path)));
     logger.info('Files copied to storage directory.');
-  } else if (formData.link1 && formData.link2) {
-    logger.info("Downloading files from links:", formData.link1, formData.link2);
-    await downloadFile(formData.link1, path.join(storageDir, 'file1'));
-    await downloadFile(formData.link2, path.join(storageDir, 'file2'));
   } else {
     logger.error('Neither files nor links provided');
+    sendMail(nomeUtente, `Si è verificato un errore per l'analisi ${analysisNameID}: uno o entrambi i file non sono reperibili.`,"error");
     throw new Error('Neither files nor links provided');
   }
 
@@ -126,51 +124,49 @@ async function asyncUpload(formData: FormData,analysisNameID:string,nomeUtente:s
 
   logger.info("Analysis processing completed.");
 
-  waitSleep();
+  //waitSleep();
 
-  sendMail(nomeUtente, `L'analisi con ID ${analysisNameID} è stata completata con successo.`);
+  sendMail(nomeUtente, `L'analisi con ID ${analysisNameID} è stata completata con successo.`,"end");
 }
 
-// Funzioni ausiliarie con log aggiunti
-async function downloadFile(url: string, dest: string): Promise<void> {
-  logger.info(`Starting download from ${url} to ${dest}`);
-  return new Promise((resolve, reject) => {
-    const command = `wget --no-check-certificate -O ${dest} ${url}`;
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        logger.error(`Error downloading file from ${url}: ${stderr}`);
-        reject(new Error(`Error downloading file: ${error.message}, ${stderr}`));
-      } else {
-        logger.info(`Successfully downloaded file from ${url}`);
-        resolve();
-      }
-    });
-  });
-}
-
-// Le altre funzioni restano le stesse, ma aggiungi log come mostrato sopra se necessario.
 
 async function insertAnalysisdb(analysisNameID: string, analysisName: string) {
-  const userId = 1; 
+  const userId = 1; // Sostituisci con l'ID utente appropriato
   const creationTimestamp = new Date();
   const analysis = { analysis_id: analysisNameID, analysis_name: analysisName, user_id: userId, creation_timestamp: creationTimestamp, status: 'Pending' };
   await insertAnalysis(analysis);
 }
 
-async function sendMail(user: string, testo: string) {
+async function sendMail(user: string, testo: string, type: string,) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: "",
-      pass: "",
+      user: "example",
+      pass: "example", // Ovviamente, per sicurezza è meglio usare variabili d'ambiente per le credenziali
     },
   });
 
+  // Definisci i dettagli della mail in base al tipo di email
+  let subject: string;
+  switch (type) {
+    case "start":
+      subject = 'Presa in carico della richiesta';
+      break;
+    case "end":
+      subject = 'Analisi completata';
+      break;
+    case "error":
+      subject = 'Errore durante l\'analisi';
+      break;
+    default:
+      subject = 'Notifica'; // Soggetto di default se necessario
+  }
+
   const mailOptions = {
-    from: "",     //mail mittente
-    to: '', //mail ricevente
-    subject: 'Analisi completata',
-    text: testo,
+    from: "example",     //mail mittente
+    to: 'example', //mail ricevente                      
+    subject: subject,                   // soggetto variabile in base al tipo di email
+    text: testo,                        // contenuto del testo passato come parametro
   };
 
   try {
@@ -322,7 +318,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function waitSleep(){
-  await sleep(10000);
+  await sleep(60000);
   console.log("postsleep");
 }
 

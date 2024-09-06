@@ -26,42 +26,71 @@ export async function POST(request: NextRequest) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
 
-    // Salva il chunk con un nome che include il numero del chunk per evitare conflitti
     const chunkPath = path.join(uploadDir, `${fileName}-chunk-${chunkNumber}`);
+
+    // Log dettagliato prima della scrittura del file
+    logger.info(`Saving chunk ${chunkNumber} of file ${fileName} to ${chunkPath}`);
+
     await fs.promises.writeFile(chunkPath, new Uint8Array(await (chunk as File).arrayBuffer()));
+
     logger.info(`Chunk ${chunkNumber} saved to ${chunkPath}`);
 
-    // Controlla se tutti i chunk sono stati ricevuti (sulla base del totale atteso)
+    // Controlla se tutti i chunk sono stati ricevuti
     if (chunkNumber + 1 === totalChunks) {
       logger.info(`All ${totalChunks} chunks for file ${fileName} received. Starting to combine them.`);
-
+      
       const filePath = path.join(uploadDir, fileName);
-      const writeStream = fs.createWriteStream(filePath, { flags: 'w' });
-
-      for (let i = 0; i < totalChunks; i++) {
-        const chunkPartPath = path.join(uploadDir, `${fileName}-chunk-${i}`);
-        try {
-          const chunkPart = await fs.promises.readFile(chunkPartPath);
-          logger.info(`Writing chunk ${i} to file ${filePath}`);
-          writeStream.write(chunkPart);
-          await fs.promises.unlink(chunkPartPath);  // Rimuovi il chunk una volta che è stato scritto
-        } catch (err: any) {
-          logger.error(`Error writing chunk ${i} to file: ${err.message}`);
-          return NextResponse.json({ success: false, error: `Error writing chunk ${i} to file: ${err.message}` }, { status: 500 });
-        }
+      
+      try {
+        await mergeChunks(uploadDir, fileName, totalChunks, filePath);
+        return NextResponse.json({ success: true, fileReconstructed: true });
+      } catch (error : any) {
+        logger.error(`Error merging chunks for file ${fileName}: ${error.message}`);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
       }
-
-      // Fine della scrittura, chiudi il writeStream
-      writeStream.end(() => {
-        logger.info(`File ${filePath} successfully reconstructed from chunks.`);
-      });
-
-      return NextResponse.json({ success: true, fileReconstructed: true });
     }
 
     return NextResponse.json({ success: true, fileReconstructed: false });
   } catch (error: any) {
-    logger.error('Error during chunk upload:', error);
+    logger.error(`Error during chunk upload: ${error.message}`, error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+async function mergeChunks(uploadDir: string, fileName: string, totalChunks: number, filePath: string) {
+  const writeStream = fs.createWriteStream(filePath, { flags: 'w' });
+
+  for (let i = 0; i < totalChunks; i++) {
+    const chunkPartPath = path.join(uploadDir, `${fileName}-chunk-${i}`);
+    try {
+      const chunkPart = await fs.promises.readFile(chunkPartPath);
+      logger.info(`Writing chunk ${i} to file ${filePath}`);
+      writeStream.write(chunkPart);
+    } catch (err: any) {
+      logger.error(`Error writing chunk ${i} to file: ${err.message}`);
+      throw err; // Invia l'errore al chiamante e interrompe il processo di scrittura
+    }
+  }
+
+  writeStream.end(); // Chiudi lo stream di scrittura quando tutti i chunk sono stati uniti
+
+  // Aspetta che lo stream di scrittura sia effettivamente chiuso
+  await new Promise((resolve, reject) => {
+    writeStream.on('finish', resolve);
+    writeStream.on('error', reject);
+  });
+
+  // Dopo che il file è stato ricostruito correttamente, elimina i chunk
+  for (let i = 0; i < totalChunks; i++) {
+    const chunkPartPath = path.join(uploadDir, `${fileName}-chunk-${i}`);
+    try {
+      await fs.promises.unlink(chunkPartPath); // Elimina il chunk solo dopo che è stato unito correttamente
+      logger.info(`Deleted chunk ${i} after merging.`);
+    } catch (err: any) {
+      logger.error(`Error deleting chunk ${i}: ${err.message}`);
+    }
+  }
+
+  logger.info(`File ${filePath} successfully reconstructed from chunks.`);
+}
+

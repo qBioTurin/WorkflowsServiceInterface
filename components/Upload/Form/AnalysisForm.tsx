@@ -1,5 +1,5 @@
 "use client";
-import { Card, Button, Group, Box, TextInput, Title, Progress, Text, RadioGroup, Radio } from '@mantine/core';
+import { Card, Button, Group, Box, TextInput, Title, Progress, Text } from '@mantine/core';
 import { IconFileAnalytics } from '@tabler/icons-react';
 import React, { useState } from 'react';
 import path from 'path';
@@ -14,9 +14,6 @@ interface AnalysisFormProps {
 const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
   const [file1, setFile1] = useState<File | null>(null);
   const [file2, setFile2] = useState<File | null>(null);
-  const [link1, setLink1] = useState('');
-  const [link2, setLink2] = useState('');
-  const [uploadMethod, setUploadMethod] = useState('file');
   const [analysisName, setAnalysisName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -26,8 +23,6 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
     console.log('Resetting form fields.');
     setFile1(null);
     setFile2(null);
-    setLink1('');
-    setLink2('');
     setAnalysisName('');
     setUploadSuccess(null);
     setIsUploading(false);
@@ -35,9 +30,9 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
     setProgress(0);
   };
 
-  const uploadFileInChunks = async (file: File, fieldName: string): Promise<any> => {
-    const chunkSize = 10 * 1024 * 1024; // 10MB per chunk
-    const totalChunks = Math.ceil(file.size / chunkSize);
+  const uploadFileInChunks = async (file: File, fieldName: string, totalChunksGlobal: number, currentChunkStart: number): Promise<any> => {
+    const chunkSize = 50 * 1024 * 1024; // 50MB per chunk
+    const totalChunks = Math.ceil(file.size / chunkSize); // Numero totale di chunk per il file corrente
     console.log(`Starting chunked upload for ${file.name} with size ${file.size} bytes and ${totalChunks} total chunks`);
   
     const maxRetries = 3;
@@ -45,7 +40,7 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
   
     for (let start = 0; start < file.size; start += chunkSize) {
       const chunk = file.slice(start, start + chunkSize);
-      const chunkNumber = start / chunkSize;
+      const chunkNumber = start / chunkSize; // Questo è il chunkNumber per il file corrente
       let attempts = 0;
       let success = false;
   
@@ -54,9 +49,9 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
           const chunkFormData = new FormData();
           chunkFormData.append('analysisName', analysisName);
           chunkFormData.append(fieldName, chunk);
-          chunkFormData.append('chunkNumber', String(chunkNumber));
-          chunkFormData.append('totalChunks', String(totalChunks));
-          chunkFormData.append('fileName', file.name);
+          chunkFormData.append('chunkNumber', String(chunkNumber)); // Numero di chunk relativo al file
+          chunkFormData.append('totalChunks', String(totalChunks)); // Numero totale di chunk per questo file
+          chunkFormData.append('fileName', file.name); // Nome del file
   
           const response = await fetch('/api/upload', {
             method: 'POST',
@@ -77,11 +72,13 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
   
           console.log(`Successfully uploaded chunk ${chunkNumber} for ${file.name}`);
   
-          // Aggiorna la barra di progresso
-          setProgress(((chunkNumber + 1) / totalChunks) * 100);
+          // Aggiorna il progresso globale
+          const globalProgress = ((currentChunkStart + chunkNumber + 1) / totalChunksGlobal) * 100;
+          setProgress(globalProgress);
   
+          // Se il file è stato ricostruito, restituisci il risultato
           if (result.fileReconstructed) {
-            return result; // Restituisce l'intero risultato JSON
+            return result;
           }
   
         } catch (error) {
@@ -98,14 +95,11 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
   
     return { success: false, fileReconstructed: false };
   };
-  
-  
 
-  // Modifica nella funzione handleSubmit
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
   
-    console.log('Form submitted with method:', uploadMethod);
+    console.log('Form submitted with files');
   
     if (!analysisName.trim()) {
       console.warn('Analysis name is required.');
@@ -113,15 +107,9 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
       return;
     }
   
-    if (uploadMethod === 'file' && (!file1 || !file2)) {
+    if (!file1 || !file2) {
       console.warn('Both files are required for upload.');
       alert('Please select both files.');
-      return;
-    }
-  
-    if (uploadMethod === 'link' && (!link1.trim() || !link2.trim())) {
-      console.warn('Both links are required.');
-      alert('Please provide both links.');
       return;
     }
   
@@ -129,56 +117,30 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
     setError(null);
   
     try {
-      let serverFormData;
+      const totalChunksFile1 = Math.ceil(file1.size / (50 * 1024 * 1024)); // Chunk di 50MB
+      const totalChunksFile2 = Math.ceil(file2.size / (50 * 1024 * 1024));
+      const totalChunksGlobal = totalChunksFile1 + totalChunksFile2; // Somma dei chunk di entrambi i file
   
-      if (uploadMethod === 'file' && file1 && file2) {
-        const file1Result = await uploadFileInChunks(file1 as File, 'file1');
-        const file2Result = await uploadFileInChunks(file2 as File, 'file2');
-        console.log("what the sigma"+file1Result.fileReconstructed+ file2Result.fileReconstructed)
-        if (file1Result.fileReconstructed /*&& file2Result.fileReconstructed*/) {
-          console.log('All file chunks uploaded and reconstructed successfully.');
+      // Carica il primo file
+      const file1Result = await uploadFileInChunks(file1, 'file1', totalChunksGlobal, 0);
+      // Carica il secondo file, con un inizio chunk aggiornato
+      const file2Result = await uploadFileInChunks(file2, 'file2', totalChunksGlobal, totalChunksFile1);
   
-          serverFormData = {
-            analysisName,
-            file1Path: path.join(process.cwd(), 'app', 'public', 'uploads', `${analysisName}`, `${file1.name}`),
-            file2Path: path.join(process.cwd(), 'app', 'public', 'uploads', `${analysisName}`, `${file2.name}`),
-          };
+      // Verifica se entrambi i file sono stati ricostruiti
+      if (file1Result.fileReconstructed && file2Result.fileReconstructed) {
+        console.log('Both files uploaded and reconstructed successfully.');
   
-          await submitAnalysis(serverFormData);
-          setUploadSuccess(true);
-        } else {
-          setError('Error reconstructing files on the server.');
-        }
-      } else {
-        const formData = new FormData();
-        formData.append('analysisName', analysisName);
-        formData.append('link1', link1);
-        formData.append('link2', link2);
-  
-        console.log('Uploading via links:', { link1, link2 });
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-  
-        const result = await response.json();
-  
-        if (!result.success) {
-          throw new Error(`Error uploading files: ${result.error}`);
-        }
-  
-        console.log('Files uploaded successfully via links.');
-  
-        serverFormData = {
+        const serverFormData = {
           analysisName,
-          file1Path: result.file1Path,
-          file2Path: result.file2Path,
+          file1Path: path.join(process.cwd(), 'app', 'public', 'uploads', `${analysisName}`, `${file1.name}`),
+          file2Path: path.join(process.cwd(), 'app', 'public', 'uploads', `${analysisName}`, `${file2.name}`),
         };
   
-        await submitAnalysis(serverFormData);
+        submitAnalysis(serverFormData);
         setUploadSuccess(true);
+      } else {
+        setError('Error reconstructing files on the server.');
       }
-  
     } catch (err: any) {
       console.error('Error during submission:', err);
       setError(`An error occurred during submission: ${err.message}`);
@@ -187,8 +149,6 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
     }
   };
   
-
-
   return (
     <>
       <Title order={1} mb="lg">New Analysis</Title>
@@ -212,65 +172,12 @@ const AnalysisForm: React.FC<AnalysisFormProps> = ({ setUploadSuccess }) => {
                 },
               }}
             />
-            <RadioGroup
-              label="Upload Method"
-              value={uploadMethod}
-              onChange={setUploadMethod}
-              mb="md"
-              styles={{
-                label: {
-                  color: 'white',
-                },
-              }}
-            >
-              <Radio value="file" label="Upload Files" />
-              <Radio value="link" label="Provide Links" />
-            </RadioGroup>
-            {uploadMethod === 'file' ? (
-              <>
-                <Box my="md">
-                  <FileInput file={file1} setFile={setFile1} label="Upload File 1" />
-                </Box>
-                <Box my="md">
-                  <FileInput file={file2} setFile={setFile2} label="Upload File 2" />
-                </Box>
-              </>
-            ) : (
-              <>
-                <TextInput
-                  label="Link 1"
-                  placeholder="Enter the first file link"
-                  value={link1}
-                  onChange={(event) => setLink1(event.currentTarget.value)}
-                  mb="md"
-                  styles={{
-                    input: {
-                      backgroundColor: accentGreenColor,
-                      color: 'white',
-                    },
-                    label: {
-                      color: 'white',
-                    },
-                  }}
-                />
-                <TextInput
-                  label="Link 2"
-                  placeholder="Enter the second file link"
-                  value={link2}
-                  onChange={(event) => setLink2(event.currentTarget.value)}
-                  mb="md"
-                  styles={{
-                    input: {
-                      backgroundColor: accentGreenColor,
-                      color: 'white',
-                    },
-                    label: {
-                      color: 'white',
-                    },
-                  }}
-                />
-              </>
-            )}
+            <Box my="md">
+              <FileInput file={file1} setFile={setFile1} label="Upload File 1" />
+            </Box>
+            <Box my="md">
+              <FileInput file={file2} setFile={setFile2} label="Upload File 2" />
+            </Box>
             {error && (
               <Box my="md">
                 <Text color="red">{error}</Text>

@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, Image, Text, AspectRatio } from '@mantine/core';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import  { Step } from '../../utils/data/workflow'
+import  { Step } from '../../utils/models/workflow'
 import classes from './WorkflowCard.module.css';
 import { accentGreenColor } from '@/utils/color/color';
 

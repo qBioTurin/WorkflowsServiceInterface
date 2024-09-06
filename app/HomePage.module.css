@@ -1,0 +1,108 @@
+.card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.card:hover {
+  transform: scale(1.01);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+
+.blurredBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  filter: blur(4px);
+  z-index: -1;
+}
+
+.viewMore {
+  filter: blur(4px);
+  transition: filter 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewMore:hover {
+  filter: blur(0);
+}
+
+/* ArticlesCardsGrid.module.css */
+.cardBlurred {
+  filter: blur(8px);
+  transition: filter 0.3s;
+}
+
+.cardHidden {
+  display: none;
+}
+
+.title {
+  text-align: center; /* Centra il titolo */
+  color: #252d29; /* Colore del testo */
+  font-weight: bold; /* Peso del font per renderlo simile a un h1 */
+  margin-bottom: 2rem; /* Margine inferiore */
+  font-size: 3rem; /* Dimensione del font */
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.card:hover {
+  transform: scale(1.01);
+  box-shadow: var(--mantine-shadow-md);
+}
+
+
+.blurredBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  filter: blur(4px);
+  z-index: -1;
+}
+
+.viewMore {
+  filter: blur(4px);
+  transition: filter 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewMore:hover {
+  filter: blur(0);
+}
+
+/* ArticlesCardsGrid.module.css */
+.cardBlurred {
+  filter: blur(8px);
+  transition: filter 0.3s;
+}
+
+.cardHidden {
+  display: none;
+}
+
+.title {
+  text-align: center; /* Centra il titolo */
+  color: #252d29; /* Colore del testo */
+  font-weight: bold; /* Peso del font per renderlo simile a un h1 */
+  margin-bottom: 2rem; /* Margine inferiore */
+  font-size: 3rem; /* Dimensione del font */
+}
+

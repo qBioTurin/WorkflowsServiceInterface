@@ -1,32 +1,30 @@
-// login.tsx
-
 'use client';
 import { useState } from 'react';
+import { Button, TextInput, PasswordInput, Container, Paper, Title, Center, Group, UnstyledButton } from '@mantine/core';
 import { useRouter } from 'next/navigation';
-import { Button, TextInput, Group, Container, Paper, Title, Center, UnstyledButton, PasswordInput } from '@mantine/core';
-import axios from 'axios';
-import { IconUser, IconAt, IconLock } from '@tabler/icons-react';
-import { MantineLogo } from '@mantinex/mantine-logo';
-import { useAuth } from '@/utils/auth';
+import { IconUser, IconLock } from '@tabler/icons-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('/api/login', { email, password });
-      const { accessToken } = response.data;
-      const userData = { email }; // Consider saving more user details as needed
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-      login(userData);  // Update the context with the user data
-      localStorage.setItem('accessToken', accessToken);  // Save the token
-
-      alert('Login successful');
-      router.push('/');  // Redirect to the home page
-
+      if (response.ok) {
+        alert('Login successful');
+        router.push('/');
+      } else {
+        throw new Error('Login failed');
+      }
     } catch (error) {
       console.error('Login error:', error);
       alert('Failed to login. Please try again.');
@@ -34,18 +32,27 @@ export default function LoginPage() {
   };
 
   return (
-    <Container size={420} my={40}>
+    <Container
+      size={420}
+      my={40}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+      }}
+    >
       <Center mb="xl">
-        <UnstyledButton onClick={() => router.push('/')} title="Home">
-          <MantineLogo size={80} />
+        <UnstyledButton title="Home" onClick={() => router.push('/')}>
+          <img src="/images/logo.jpg" alt="Home" width={280} height={25} />
         </UnstyledButton>
       </Center>
       <Paper withBorder shadow="md" p={30} radius="md">
-        <Title mb="lg">Login</Title>
+        <Title style={{ textAlign: 'center' }} mb="lg">Login</Title>
         <TextInput
           label="Email"
           placeholder="you@example.com"
-          leftSection={<IconUser />}
+          leftSection={<IconUser size="1rem" />}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -53,14 +60,22 @@ export default function LoginPage() {
         <PasswordInput
           label="Password"
           placeholder="Your password"
-          leftSection={<IconLock />}
+          leftSection={<IconLock size="1rem" />}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           mt="md"
         />
         <Group mt="md">
-          <Button type="submit" onClick={handleLogin}>Login</Button>
+          <Button
+            type="submit"
+            onClick={handleLogin}
+            style={{
+              backgroundColor: 'rgb(225, 146, 67)', // Colore del pulsante
+            }}
+          >
+            Login
+          </Button>
         </Group>
       </Paper>
     </Container>
