@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { Button, TextInput, PasswordInput, Container, Paper, Title, Center, Group, UnstyledButton } from '@mantine/core';
 import { useRouter } from 'next/navigation';
 import { IconUser, IconLock } from '@tabler/icons-react';
+import { useAuth } from '@/utils/auth';  // Importa il contesto di autenticazione
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();  // Ottieni la funzione login dal contesto
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -20,7 +22,10 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        alert('Login successful');
+        const data = await response.json();
+
+        // Usa la funzione login del contesto per memorizzare i dati dell'utente
+        login(data.user);  // Passa i dati dell'utente
         router.push('/');
       } else {
         throw new Error('Login failed');

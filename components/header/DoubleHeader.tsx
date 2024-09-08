@@ -1,6 +1,6 @@
 "use client";
 import cx from 'clsx';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';  // Per il redirect
 import axios from 'axios';  // Per la chiamata all'API di logout
@@ -40,6 +40,7 @@ interface HeaderProps {
 
 const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
   const theme = useMantineTheme();
+  
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
   
@@ -54,6 +55,13 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
       console.error('Logout error:', error);
     }
   };
+
+  useEffect(() => {
+    console.log('User data updated:', user);
+    if (user) {
+      alert(`Benvenuto ${user.first_name}`);
+    }
+  }, [user]);
 
   const items = tabs.map((tab : any) => (
     <Tabs.Tab value={tab.label} key={tab.label}>

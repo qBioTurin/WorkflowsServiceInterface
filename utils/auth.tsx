@@ -1,11 +1,17 @@
-"use client";
+"use client"
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';  // Usa `next/navigation` per gestire il redirect
+interface User {
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+}
 
 interface AuthContextType {
-  user: any;
-  login: (userData: any) => void;
+  user: User | null;
+  login: (userData: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -13,43 +19,49 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Stato per tracciare l'autenticazione
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const fetchUserData = async () => {
       try {
-        const response = await fetch('/api/refresh', { method: 'POST' });  // Usa la tua route di refresh per controllare lo stato
-        const data = await response.json();
+        const response = await fetch('/api/user', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
         if (response.ok) {
-          // Se il token è stato aggiornato correttamente
+          const data = await response.json();
+          console.log('User data fetched from server:', data.user);  // Debug
+
+          // Aggiorna lo stato con i dati dell'utente ricevuti dall'API
+          setUser(data.user);
           setIsAuthenticated(true);
-          setUser({ first_name: 'John' }); // Puoi aggiornare lo stato dell'utente come preferisci
         } else {
-          console.log('Token non valido o scaduto. Provando a rinnovare...');
+          console.error('Failed to fetch user data');
+          setIsAuthenticated(false);
         }
       } catch (error) {
-        console.error('Errore nel controllo dello stato di autenticazione:', error);
+        console.error('Errore nel recupero dei dati utente:', error);
         setIsAuthenticated(false);
-        setUser(null);
       }
     };
 
-    checkAuthStatus();
+    fetchUserData();
   }, []);
 
-  const login = (userData: any) => {
-    setUser(userData);
+  const login = (userData: User) => {
+    setUser(userData);  // Memorizza i dati dell'utente
     setIsAuthenticated(true);
-    router.push('/');
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
-    router.push('/login');
+    router.push('/');
   };
 
   return (
