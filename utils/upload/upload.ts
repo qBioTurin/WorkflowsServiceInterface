@@ -139,8 +139,8 @@ async function sendMail(user: string, email: string, testo: string, type: string
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: "file.ricevi2@gmail.com",
-      pass: "qoxi ojqc kvon ouok",
+      user: "",
+      pass: "",
     },
   });
 
@@ -160,7 +160,7 @@ async function sendMail(user: string, email: string, testo: string, type: string
   }
 
   const mailOptions = {
-    from: "file.ricevi2@gmail.com",  
+    from: "",  
     to: email,       
     subject: subject,
     text: testo,
