@@ -29,7 +29,7 @@ export const getReports = async (): Promise<Case[]> => {
               name: file,
               creationDate: fs.statSync(reportPath).birthtime.toISOString().split('T')[0],
               status: 'Completed',
-              downloadUrl: '', // URL del server di download, lasciato vuoto
+              downloadUrl: '', 
             };
             cases.push(caseItem);
           });

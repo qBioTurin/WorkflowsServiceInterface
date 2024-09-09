@@ -20,7 +20,6 @@ export async function _getWorkflowData(): Promise<Workflow[]> {
     const workflows = new Map<number, Workflow>();
 
     for (const row of result.rows) {
-      // Trova o crea il workflow
       let workflow = workflows.get(row.workflow_id);
       if (!workflow) {
         workflow = {
@@ -28,12 +27,11 @@ export async function _getWorkflowData(): Promise<Workflow[]> {
           nome: row.workflow_nome,
           descrizione: row.workflow_descrizione,
           url: row.workflow_url,
-          steps: [] // Inizializza l'array dei passi
+          steps: [] 
         };
         workflows.set(row.workflow_id, workflow);
       }
 
-      // Aggiungi il passo se esiste
       if (row.step_id) {
         workflow.steps.push({
           step_id: row.step_id,
@@ -54,7 +52,6 @@ export async function _getWorkflowData(): Promise<Workflow[]> {
 
 export async function _getWorkflowByName(nome: string): Promise<Workflow | null> {
   try {
-    // Usiamo TRIM per eliminare gli spazi non voluti nel confronto SQL
     const result = await pool.query(`
       SELECT w.workflow_id, w.nome AS workflow_nome, w.descrizione AS workflow_descrizione, w.url AS workflow_url,
              s.step_id, s.nome AS step_nome, s.descrizione AS step_descrizione, s.url AS step_url, s.image AS step_image
@@ -64,9 +61,8 @@ export async function _getWorkflowByName(nome: string): Promise<Workflow | null>
       ORDER BY s.step_id;
     `, [nome]);
 
-    // Se nessun workflow viene trovato, ritorna null
     if (result.rowCount === 0) {
-      return null; // Workflow non trovato
+      return null; 
     }
 
     // Crea il workflow
@@ -91,7 +87,7 @@ export async function _getWorkflowByName(nome: string): Promise<Workflow | null>
       }
     }
 
-    return workflow; // Ritorna il workflow completo
+    return workflow;
   } catch (error) {
     logger.error("Error fetching workflow by name:", error);
     throw new Error(`Errore durante il recupero del workflow: ${nome}`);

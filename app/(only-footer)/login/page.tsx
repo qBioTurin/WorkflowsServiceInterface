@@ -7,7 +7,7 @@ import { useAuth } from '@/utils/auth';  // Importa il contesto di autenticazion
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();  // Ottieni la funzione login dal contesto
+  const { login } = useAuth();  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -26,7 +26,7 @@ export default function LoginPage() {
 
         // Usa la funzione login del contesto per memorizzare i dati dell'utente
         login(data.user);  // Passa i dati dell'utente
-        router.push('/');
+        window.location.href = '/';
       } else {
         throw new Error('Login failed');
       }

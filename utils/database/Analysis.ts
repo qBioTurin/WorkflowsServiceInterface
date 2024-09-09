@@ -3,21 +3,8 @@
 import { QueryResult } from 'pg';
 import pool from './db';
 import logger from '@/utils/logger/logger';
+import { Analysis, ReportFile } from '../models/models';
 
-type Analysis = {
-    analysis_id: string;
-    analysis_name: string;
-    user_id: number;
-    creation_timestamp: Date;
-    status: string;
-  };
-  
-  type ReportFile = {
-    report_id: number;
-    analysis_id: string;
-    report_path: string;
-    expiration_date: Date;
-  };
 export async function insertAnalysis(analysis: Analysis): Promise<Analysis> {
   try {
     const { analysis_id, analysis_name, user_id, creation_timestamp, status } = analysis;

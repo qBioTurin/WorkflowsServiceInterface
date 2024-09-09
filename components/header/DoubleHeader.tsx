@@ -2,8 +2,8 @@
 import cx from 'clsx';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';  // Per il redirect
-import axios from 'axios';  // Per la chiamata all'API di logout
+import { useRouter } from 'next/navigation';  
+import axios from 'axios';  
 import {
   Container,
   Avatar,
@@ -29,7 +29,7 @@ import {
   IconUpload,
 } from '@tabler/icons-react';
 import classes from './DoubleHeader.module.css';
-import { useAuth } from '@/utils/auth';  // Importa l'hook useAuth
+import { useAuth } from '@/utils/auth'; 
 
 const tabs:any = [];
 
@@ -44,13 +44,12 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
   const [burgerOpen, setBurgerOpen] = useState(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
   
-  const { user, logout, isAuthenticated } = useAuth();  // Ottieni lo stato dell'utente e il logout dal contesto
+  const { user, logout, isAuthenticated } = useAuth();  
 
   const handleLogout = async () => {
     try {
-      // Fai la richiesta di logout alla tua API Next.js
       await axios.get('/api/logout');
-      logout();  // Esegui anche la funzione di logout dal contesto
+      logout();  
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -58,9 +57,6 @@ const DoubleHeader: React.FC<HeaderProps> = ({ opened, toggle }) => {
 
   useEffect(() => {
     console.log('User data updated:', user);
-    if (user) {
-      alert(`Benvenuto ${user.first_name}`);
-    }
   }, [user]);
 
   const items = tabs.map((tab : any) => (

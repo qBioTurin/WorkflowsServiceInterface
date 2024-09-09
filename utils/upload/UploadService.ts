@@ -11,9 +11,8 @@ import logger from '../logger/logger';
 
 function calculateExpirationDate(currentDate: Date): string {
   const expirationDate = new Date(currentDate);
-  expirationDate.setDate(currentDate.getDate() + 7); // Aggiunge 7 giorni alla data corrente
+  expirationDate.setDate(currentDate.getDate() + 7);
 
-  // Converte la data di scadenza nel formato desiderato 'GG/MM/AAAA'
   const day = expirationDate.getDate().toString().padStart(2, '0');
   const month = (expirationDate.getMonth() + 1).toString().padStart(2, '0');
   const year = expirationDate.getFullYear();

@@ -1,13 +1,11 @@
 import * as winston from 'winston';
 
-// Function to filter logs by module
 const filterByModule = (module: string) => {
   return winston.format((info) => {
     return info.module === module ? info : false;
   })();
 };
 
-// Configure the logger
 const logger = winston.createLogger({
   format: winston.format.printf(info => `${info.level}: ${info.message}`), // Base format for all transports
   transports: [

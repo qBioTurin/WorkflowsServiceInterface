@@ -71,26 +71,20 @@ export default function HomePage() {
   };
 
   const content = workflowData.map((workflow) => {
-    // DEBUG: Stampa i dati di ogni workflow prima di renderizzare
-    console.log("Rendering workflow:", JSON.stringify(workflow, null, 2));
 
     return (
       <div key={workflow.nome}>
-        {/* Aggiunto click handler per il titolo del workflow */}
         <Title
           order={2}
           mt="xl"
           mb="md"
           onClick={() => handleTabClick(`/workflowdetails/${workflow.nome}`)}
-          style={{ cursor: 'pointer'}}  // Stile per evidenziare che è cliccabile
+          style={{ cursor: 'pointer'}}
         >
           {workflow.nome}
         </Title>
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
           {workflow.steps.slice(0, determineMaxItems(workflow)).map((step: Step, index) => {
-            // DEBUG: Stampa i dati di ogni step prima di renderizzare la card
-            console.log("Rendering step:", JSON.stringify(step, null, 2));
-
             return (
               <WorkflowCard key={index} step={step} blurred={false} workflowName={workflow.nome} />
             );

@@ -4,13 +4,15 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
 import { exec } from 'child_process';
-import logger from '@/utils/logger/logger';  // Importa il logger
+import logger from '@/utils/logger/logger';  
 import { insertAnalysis, insertReportFile } from '@/utils/database/Analysis';
 
 type FormData = {
   analysisName: string;
   file1Path: string;
   file2Path: string;
+  username: string;  
+  email: string;    
 };
 
 type ApiResponse = {
@@ -18,21 +20,21 @@ type ApiResponse = {
   error?: string;
 };
 
-// Funzione per eseguire i comandi con meccanismo di retry
+
 async function executeWithRetry(command: string, maxRetries = 3, delayMs = 2000): Promise<void> {
   let attempts = 0;
 
   while (attempts < maxRetries) {
     try {
       await executeCommand(command);
-      return; // Esce dalla funzione se il comando ha successo
-    } catch (error : any) {
+      return; 
+    } catch (error: any) {
       attempts++;
       if (attempts >= maxRetries) {
         throw new Error(`Failed to execute command after ${maxRetries} attempts: ${error.message}`);
       } else {
         console.warn(`Retrying command (${attempts}/${maxRetries})...`);
-        await sleep(delayMs); // Attende un breve periodo prima di riprovare
+        await sleep(delayMs);
       }
     }
   }
@@ -53,40 +55,40 @@ async function executeCommand(command: string): Promise<void> {
 export async function submitAnalysis(formData: FormData): Promise<ApiResponse> {
   console.log("chiaro di corretta chiamata");
   try {
-    
     logger.info(`Messaggio chiaro di corretta chiamata`);
 
-    if (!formData.analysisName || 
-        (!formData.file1Path) || 
-        (!formData.file2Path)) {
+    if (!formData.analysisName || !formData.file1Path || !formData.file2Path) {
       logger.error('Missing files or analysis name');
       throw new Error('Missing files or analysis name');
     }
+
     const uniqueId = uuidv4();  
-    const nomeUtente = "utente1";
+    const username = formData.username; 
+    const email = formData.email; 
     const analysisName = formData.analysisName;
     const analysisNameID = `${analysisName}-${getCurrentDateFormatted()}-${uniqueId}`;
-    try{
-      asyncUpload(formData,analysisNameID,nomeUtente,uniqueId);
+
+    try {
+      await asyncUpload(formData, analysisNameID, username, uniqueId);
       return { success: true };
-    }catch(err:any){sendMail(nomeUtente, `Si è verificato un errore per l'analisi ${analysisNameID}: ${err}`,"error");
+    } catch (err: any) {
+      await sendMail(username, email, `Si è verificato un errore per l'analisi ${analysisNameID}: ${err}`, "error");
       return { success: false, error: err.message };
     }
   } catch (error: any) {
-    
     logger.error("Error in submitAnalysis:", error);
     return { success: false, error: error.message };
   }
 }
 
-async function asyncUpload(formData: FormData,analysisNameID:string,nomeUtente:string,uniqueId:string){
-  
+async function asyncUpload(formData: FormData, analysisNameID: string, username: string, uniqueId: string) {
   const analysisName = formData.analysisName;
-  const analysisDir = path.join(process.cwd(), 'public', 'storage', nomeUtente, `${analysisNameID}`);
+  const email = formData.email; 
+  const analysisDir = path.join(process.cwd(), 'public', 'storage', username, `${analysisNameID}`);
   const storageDir = path.join(analysisDir, 'input');
   const outputDir = path.join(analysisDir, 'output');
 
-  sendMail(nomeUtente, `L'analisi con ID ${analysisNameID} è stata presa in carico.`,"start");
+  await sendMail(username, email, `L'analisi con ID ${analysisNameID} è stata presa in carico.`, "start");
 
   await fs.mkdir(storageDir, { recursive: true });
   logger.info(`Created storage directory at ${storageDir}`);
@@ -97,56 +99,51 @@ async function asyncUpload(formData: FormData,analysisNameID:string,nomeUtente:s
     logger.info('Files copied to storage directory.');
   } else {
     logger.error('Neither files nor links provided');
-    sendMail(nomeUtente, `Si è verificato un errore per l'analisi ${analysisNameID}: uno o entrambi i file non sono reperibili.`,"error");
+    await sendMail(username, email, `Si è verificato un errore per l'analisi ${analysisNameID}: uno o entrambi i file non sono reperibili.`, "error");
     throw new Error('Neither files nor links provided');
   }
 
-  await createConfigFile(storageDir, nomeUtente);
+  await createConfigFile(storageDir, username);
   await copyConfigFile('streamflow.yml', storageDir);
 
-  await createStartScript(storageDir, analysisNameID, nomeUtente);
+  await createStartScript(storageDir, analysisNameID, username);
   await fs.mkdir(outputDir, { recursive: true });
 
   logger.info('Copying files to remote server.');
-  await copyFilesToRemote(storageDir, analysisNameID, nomeUtente);
+  await copyFilesToRemote(storageDir, analysisNameID, username);
 
   logger.info('Inserting analysis record in the database.');
   await insertAnalysisdb(analysisNameID, analysisName);
 
   logger.info('Executing remote script.');
-  await executeRemoteScript(analysisDir, analysisNameID, nomeUtente);
+  await executeRemoteScript(analysisDir, analysisNameID, username);
 
   logger.info('Copying results back to local machine.');
-  await copyResultsBackToLocal(analysisNameID, analysisDir, nomeUtente);
+  await copyResultsBackToLocal(analysisNameID, analysisDir, username);
 
   logger.info('Inserting report file record in the database.');
   await insertReportFiledb(outputDir, uniqueId, analysisNameID);
 
   logger.info("Analysis processing completed.");
-
-  //waitSleep();
-
-  sendMail(nomeUtente, `L'analisi con ID ${analysisNameID} è stata completata con successo.`,"end");
+  await sendMail(username, email, `L'analisi con ID ${analysisNameID} è stata completata con successo.`, "end");
 }
 
-
 async function insertAnalysisdb(analysisNameID: string, analysisName: string) {
-  const userId = 1; // Sostituisci con l'ID utente appropriato
+  const userId = 1; 
   const creationTimestamp = new Date();
   const analysis = { analysis_id: analysisNameID, analysis_name: analysisName, user_id: userId, creation_timestamp: creationTimestamp, status: 'Pending' };
   await insertAnalysis(analysis);
 }
 
-async function sendMail(user: string, testo: string, type: string,) {
+async function sendMail(user: string, email: string, testo: string, type: string) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: "example",
-      pass: "example", // Ovviamente, per sicurezza è meglio usare variabili d'ambiente per le credenziali
+      user: "file.ricevi2@gmail.com",
+      pass: "qoxi ojqc kvon ouok",
     },
   });
 
-  // Definisci i dettagli della mail in base al tipo di email
   let subject: string;
   switch (type) {
     case "start":
@@ -159,14 +156,14 @@ async function sendMail(user: string, testo: string, type: string,) {
       subject = 'Errore durante l\'analisi';
       break;
     default:
-      subject = 'Notifica'; // Soggetto di default se necessario
+      subject = 'Notifica';
   }
 
   const mailOptions = {
-    from: "example",     //mail mittente
-    to: 'example', //mail ricevente                      
-    subject: subject,                   // soggetto variabile in base al tipo di email
-    text: testo,                        // contenuto del testo passato come parametro
+    from: "file.ricevi2@gmail.com",  
+    to: email,       
+    subject: subject,
+    text: testo,
   };
 
   try {
@@ -177,12 +174,24 @@ async function sendMail(user: string, testo: string, type: string,) {
   }
 }
 
-async function insertReportFiledb(outputDir: string, uniqueId: string, analysisNameID: string) {
-  const reportPath = path.join(outputDir, 'log.txt');
-  const expirationDate = new Date();
-  expirationDate.setDate(expirationDate.getDate() + 7);
-  const reportFile = { report_id: 0, analysis_id: analysisNameID, report_path: reportPath, expiration_date: expirationDate };
-  await insertReportFile(reportFile);
+// Le altre funzioni rimangono invariate, ma ovunque usavamo `nomeUtente`, ora useremo `username` passato nel formData
+
+async function createConfigFile(destinationDir: string, username: string): Promise<void> {
+  const configContent = `
+genome_size: 13m
+fastq_directory:
+  class: Directory
+  path: /home/gforestello/${username}/input
+nanopore: true
+prefix: assembly
+threads: 36
+assembly_canu: canu
+assembly_flye: flye
+assembly_wtdbg2: wtdbg2
+  `;
+
+  const destPath = path.join(destinationDir, 'config.yml');
+  await fs.writeFile(destPath, configContent.trim());
 }
 
 async function copyConfigFile(fileName: string, destinationDir: string): Promise<void> {
@@ -191,19 +200,15 @@ async function copyConfigFile(fileName: string, destinationDir: string): Promise
   await fs.copyFile(srcPath, destPath);
 }
 
-async function removeLocalDirectory(localPath: string): Promise<void> {
-  await fs.rm(localPath, { recursive: true, force: true });
-}
-
-async function createStartScript(storageDir: string, analysisNameID: string, nomeUtente: string): Promise<void> {
+async function createStartScript(storageDir: string, analysisNameID: string, username: string): Promise<void> {
   const scriptContent = `
 #!/bin/bash
 
 # Creare la cartella di output se non esiste
-mkdir -p "${nomeUtente}/${analysisNameID}/output"
+mkdir -p "${username}/${analysisNameID}/output"
 
 # Creare il file di log
-echo "avviato in maniera corretta" > "${nomeUtente}/${analysisNameID}/output/log.txt"
+echo "avviato in maniera corretta" > "${username}/${analysisNameID}/output/log.txt"
 
 # Creare e attivare la virtual environment solo se non esiste
 if [ ! -d "venv" ]; then
@@ -221,72 +226,17 @@ python3 "runPythonScript.py"
 sleep 10
 
 # Aggiornare il file di log
-echo "workflow completato" >> "${nomeUtente}/${analysisNameID}/output/log.txt"
+echo "workflow completato" >> "${username}/${analysisNameID}/output/log.txt"
   `.trim();
 
   const scriptPath = path.join(storageDir, 'runWorkflow.sh');
   await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 });
 }
 
-async function createPythonScript(storageDir: string): Promise<void> {
-  const scriptContent = `
-import os
-import requests
-
-response = requests.get('https://jsonplaceholder.typicode.com/todos/1')
-if response.status_code == 200:
-    script_dir = os.path.dirname(__file__)
-    dump_file_path = os.path.join(script_dir, 'data_dump.txt')
-    with open(dump_file_path, 'w') as file:
-        file.write(response.text)
-    log_file_path = os.path.join(script_dir, '..', 'output', 'log.txt')
-    with open(log_file_path, 'a') as log_file:
-        log_file.write("\\nRichiesta HTTP completata con successo e file di dump creato")
-else:
-    log_file_path = os.path.join(script_dir, '..', 'output', 'log.txt')
-    with open(log_file_path, 'a') as log_file:
-        log_file.write("\\nErrore nella richiesta HTTP")
-  `.trim();
-
-  const scriptPath = path.join(storageDir, 'runPythonScript.py');
-  await fs.writeFile(scriptPath, scriptContent);
-}
-
-async function createConfigFile(destinationDir: string, userName: string): Promise<void> {
-  const configContent = `
-genome_size: 13m
-fastq_directory:
-  class: Directory
-  path: /home/gforestello/${userName}/input
-nanopore: true
-prefix: assembly
-threads: 36
-assembly_canu: canu
-assembly_flye: flye
-assembly_wtdbg2: wtdbg2
-  `;
-
-  const destPath = path.join(destinationDir, 'config.yml');
-  await fs.writeFile(destPath, configContent.trim());
-}
-
-async function createReportFile(reportDir: string, uniqueId: string): Promise<void> {
-  const metadataPath = path.join(reportDir, `metadata-workflow-${uniqueId}.report`);
-  const reportContent = `
-    USER:
-    DATA:
-    ORA:
-    WORKFLOW NAME:
-    ERROR: false
-    SCADENZA-FILE-SU-MACCHINA: ${calculateExpirationDate(new Date())}
-  `.trim();
-  await fs.writeFile(metadataPath, reportContent);
-}
-
-async function copyFilesToRemote(storageDir: string, remoteFolderName: string, nomeUtente: string): Promise<void> {
+async function copyFilesToRemote(storageDir: string, remoteFolderName: string, username: string): Promise<void> {
   const remoteUser = 'gforestello';
   const remoteHost = '130.192.212.55';
-  const remotePath = `${nomeUtente}/${remoteFolderName}`;
+  const remotePath = `${username}/${remoteFolderName}`;
 
   const mkdirCommand = `ssh -i /root/.ssh/id_rsa ${remoteUser}@${remoteHost} 'mkdir -p ${remotePath}'`;
   await executeWithRetry(mkdirCommand);
@@ -295,39 +245,34 @@ async function copyFilesToRemote(storageDir: string, remoteFolderName: string, n
   await executeWithRetry(scpCommand);
 }
 
-async function executeRemoteScript(analysisDir: string, remotePath: string, nomeUtente: string): Promise<void> {
+async function executeRemoteScript(analysisDir: string, remotePath: string, username: string): Promise<void> {
   const remoteUser = 'gforestello';
   const remoteHost = '130.192.212.55';
-  const remoteScriptPath = path.join(nomeUtente, path.basename(analysisDir), 'input', 'runWorkflow.sh');
+  const remoteScriptPath = path.join(username, path.basename(analysisDir), 'input', 'runWorkflow.sh');
 
   const sshCommand = `ssh -i /root/.ssh/id_rsa ${remoteUser}@${remoteHost} 'bash ${remoteScriptPath}'`;
   await executeWithRetry(sshCommand);
 }
 
-async function copyResultsBackToLocal(reportDir: string, localDirectory : string, nomeUtente: string): Promise<void> {
+async function copyResultsBackToLocal(reportDir: string, localDirectory : string, username: string): Promise<void> {
   const remoteUser = 'gforestello';
   const remoteHost = '130.192.212.55';
-  const remoteOutputDir = `${nomeUtente}/${reportDir}/output`;
+  const remoteOutputDir = `${username}/${reportDir}/output`;
 
   const scpCommand = `scp -i /root/.ssh/id_rsa -r ${remoteUser}@${remoteHost}:${remoteOutputDir} ${localDirectory}`;
   await executeWithRetry(scpCommand);
 }
 
+async function insertReportFiledb(outputDir: string, uniqueId: string, analysisNameID: string) {
+  const reportPath = path.join(outputDir, 'log.txt');
+  const expirationDate = new Date();
+  expirationDate.setDate(expirationDate.getDate() + 7);
+  const reportFile = { report_id: 0, analysis_id: analysisNameID, report_path: reportPath, expiration_date: expirationDate };
+  await insertReportFile(reportFile);
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function waitSleep(){
-  await sleep(60000);
-  console.log("postsleep");
-}
-
-async function removeRemoteDirectory(remotePath: string): Promise<void> {
-  const remoteUser = 'gforestello';
-  const remoteHost = '130.192.212.55';
-  const removeCommand = `ssh -i /root/.ssh/id_rsa ${remoteUser}@${remoteHost} 'rm -rf ${remotePath}'`;
-
-  await executeWithRetry(removeCommand);
 }
 
 function getCurrentDateFormatted(): string {
@@ -336,13 +281,4 @@ function getCurrentDateFormatted(): string {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const year = today.getFullYear();
   return `${day}-${month}-${year}`;
-}
-
-function calculateExpirationDate(currentDate: Date): string {
-  const expirationDate = new Date(currentDate);
-  expirationDate.setDate(currentDate.getDate() + 7);
-  const day = expirationDate.getDate().toString().padStart(2, '0');
-  const month = (expirationDate.getMonth() + 1).toString().padStart(2, '0');
-  const year = expirationDate.getFullYear();
-  return `${day}/${month}/${year}`;
 }

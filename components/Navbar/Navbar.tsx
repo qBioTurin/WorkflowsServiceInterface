@@ -5,11 +5,7 @@ import classes from '@/components/header/DoubleHeader.module.css';
 import { User } from '@/utils/models/user';
 import { rem, useMantineTheme } from '@mantine/core';
 import { IconFileAnalytics, IconLogout, IconSettings, IconSwitchHorizontal } from '@tabler/icons-react';
-
-interface NavbarProps {
-  user: User | null;
-  handleLogout: () => void;
-}
+import { NavbarProps } from '@/utils/models/models';
 
 const Navbar: React.FC<NavbarProps> = ({ user, handleLogout }) => {
   const theme = useMantineTheme();
